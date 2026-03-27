@@ -136,6 +136,7 @@ def prepare_docker_images(instances: list[dict]):
             "--dataset_name", DATASET_NAME,
             "--instance_ids", *instance_ids,
             "--namespace", "swebench",
+            "--env_image_tag", "latest",
         ],
         check=True,
     )
