@@ -299,7 +299,7 @@ def run_eforge_host(instance: dict, repo_dir: Path, timeout: int = 900) -> dict:
 
     try:
         result = subprocess.run(
-            ["eforge", "build", str(prd_path), "--foreground", "--auto", "--no-monitor", "--no-plugins"],
+            ["eforge", "build", str(prd_path), "--foreground", "--auto", "--no-plugins"],
             cwd=repo_dir, capture_output=True, text=True, timeout=timeout,
         )
         exit_code = result.returncode
