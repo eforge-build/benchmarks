@@ -11,7 +11,7 @@ Tests whether eforge's multi-agent pipeline (plan → build → blind review →
 - Python 3.11+
 - Node.js 18+
 - `eforge` installed globally (`npm install -g eforge`)
-- `ANTHROPIC_API_KEY` set
+- Anthropic API key or Claude Max subscription
 
 ## Setup
 

@@ -11,11 +11,6 @@ command -v python3 >/dev/null 2>&1 || { echo "Error: python3 is required"; exit 
 command -v node >/dev/null 2>&1 || { echo "Error: node is required"; exit 1; }
 command -v eforge >/dev/null 2>&1 || { echo "Error: eforge is required (npm install -g eforge)"; exit 1; }
 
-# Check API key
-if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-  echo "Warning: ANTHROPIC_API_KEY not set. eforge will not work without it."
-fi
-
 # Create venv and install Python deps
 if [[ ! -d "$SCRIPT_DIR/.venv" ]]; then
   echo "Creating Python venv..."
