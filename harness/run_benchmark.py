@@ -130,25 +130,15 @@ def prepare_docker_images(instances: list[dict]):
     print("Preparing SWE-bench Docker images...")
     print("  (This may take a while on first run — building Python environments)")
 
-    # Use swebench's built-in image builder
-    # This creates sweb.eval.x86_64.<instance_id>:latest images
-    try:
-        from swebench.harness.docker_build import build_instance_images
-        from swebench.harness.test_spec import make_test_spec
-
-        test_specs = [make_test_spec(inst) for inst in instances]
-        build_instance_images(test_specs)
-    except ImportError:
-        # Fallback: try CLI approach
-        ids_str = " ".join(instance_ids)
-        subprocess.run(
-            [
-                sys.executable, "-m", "swebench.harness.prepare_images",
-                "--dataset_name", DATASET_NAME,
-                "--instance_ids", *instance_ids,
-            ],
-            check=True,
-        )
+    subprocess.run(
+        [
+            sys.executable, "-m", "swebench.harness.prepare_images",
+            "--dataset_name", DATASET_NAME,
+            "--instance_ids", *instance_ids,
+            "--namespace", "swebench",
+        ],
+        check=True,
+    )
 
     print("  SWE-bench images ready.\n")
 
