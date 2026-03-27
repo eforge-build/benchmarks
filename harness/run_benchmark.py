@@ -37,7 +37,7 @@ DATASET_NAME = "princeton-nlp/SWE-bench_Lite"
 # Avoids: flask (0% solve), django-heavy bias, flaky tests.
 STARTER_INSTANCES = [
     # scikit-learn: mid-sized, well-structured, 65-74% solve rate
-    "scikit-learn__scikit-learn-10870",   # Logic bug, solved by Devin (medium)
+    "scikit-learn__scikit-learn-10949",   # Confirmed in Lite dataset
     "scikit-learn__scikit-learn-13241",   # Clear API issue
     # pytest: mid-sized, 47-59% solve rate — genuine medium difficulty
     "pytest-dev__pytest-5103",            # Clear bug report with repro
