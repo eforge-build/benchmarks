@@ -200,14 +200,18 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
         (input_dir / "issue.md").write_text(make_prd_content(instance))
         (input_dir / "eforge.yaml").write_text(EFORGE_YAML)
 
-        # Mount Claude auth files
-        claude_dir = Path.home() / ".claude"
-        claude_json = Path.home() / ".claude.json"
-        mount_args = []
-        if claude_dir.exists():
-            mount_args.extend(["-v", f"{claude_dir}:/root/.claude:ro"])
-        if claude_json.exists():
-            mount_args.extend(["-v", f"{claude_json}:/root/.claude.json:ro"])
+        # Auth: pass API key if set, otherwise mount Claude OAuth files
+        auth_args = []
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if api_key:
+            auth_args.extend(["-e", f"ANTHROPIC_API_KEY={api_key}"])
+        else:
+            claude_dir = Path.home() / ".claude"
+            claude_json = Path.home() / ".claude.json"
+            if claude_dir.exists():
+                auth_args.extend(["-v", f"{claude_dir}:/root/.claude:ro"])
+            if claude_json.exists():
+                auth_args.extend(["-v", f"{claude_json}:/root/.claude.json:ro"])
 
         # Run eforge in container
         # Expose monitor port (4567) so builds can be watched from host
@@ -217,7 +221,7 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
                     "docker", "run", "--rm",
                     "-v", f"{input_dir}:/input:ro",
                     "-v", f"{output_dir}:/output",
-                    *mount_args,
+                    *auth_args,
                     "-p", "4566:4567",
                     "-e", f"BASE_COMMIT={base_commit}",
                     "-e", f"TIMEOUT={timeout}",
