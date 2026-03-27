@@ -6,7 +6,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Install eforge globally
+# Install eforge globally (--no-cache or EFORGE_BENCH_REBUILD=1 to update)
 RUN npm install -g eforge
 
 # Copy entrypoint script

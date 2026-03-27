@@ -151,8 +151,8 @@ def build_eforge_image(base_image: str, instance_id: str) -> str:
     """Build an eforge-enabled Docker image on top of a SWE-bench base."""
     tag = f"eforge-bench/{instance_id}:latest"
 
-    # Check if already built (skip cache with EFORGE_BENCH_REBUILD=1)
-    if not os.environ.get("EFORGE_BENCH_REBUILD"):
+    rebuild = os.environ.get("EFORGE_BENCH_REBUILD")
+    if not rebuild:
         result = subprocess.run(
             ["docker", "images", "-q", tag],
             capture_output=True, text=True,
@@ -161,10 +161,12 @@ def build_eforge_image(base_image: str, instance_id: str) -> str:
             return tag
 
     print(f"  Building eforge layer on {base_image}...")
+    cache_args = ["--no-cache"] if rebuild else []
     result = subprocess.run(
         [
             "docker", "build",
             "--platform", "linux/amd64",
+            *cache_args,
             "--build-arg", f"BASE_IMAGE={base_image}",
             "-t", tag,
             "-f", str(REPO_ROOT / "Dockerfile.eforge"),
