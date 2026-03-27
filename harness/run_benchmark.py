@@ -158,17 +158,21 @@ def build_eforge_image(base_image: str, instance_id: str) -> str:
         return tag
 
     print(f"  Building eforge layer on {base_image}...")
-    subprocess.run(
+    result = subprocess.run(
         [
             "docker", "build",
+            "--platform", "linux/amd64",
             "--build-arg", f"BASE_IMAGE={base_image}",
             "-t", tag,
             "-f", str(REPO_ROOT / "Dockerfile.eforge"),
             str(REPO_ROOT),
         ],
-        check=True,
         capture_output=True,
+        text=True,
     )
+    if result.returncode != 0:
+        print(f"  Docker build failed:\n{result.stderr[-2000:]}")
+        raise RuntimeError(f"Failed to build eforge image for {instance_id}")
     return tag
 
 

@@ -1,0 +1,2 @@
+2026-03-27 10:49:17,397 - INFO - Environment image sweb.env.py.x86_64.71498c7426dbf05599642f:latest found for pytest-dev__pytest-5227
+Building instance image swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-5227:latest for pytest-dev__pytest-5227

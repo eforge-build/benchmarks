@@ -1,0 +1,2000 @@
+2026-03-27 10:49:38,625 - INFO - Building image swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8273:latest
+Using dockerfile:
+FROM --platform=linux/x86_64 sweb.env.py.x86_64.764c21123474adcba1e003:latest
+
+COPY ./setup_repo.sh /root/
+RUN sed -i -e 's/\r$//' /root/setup_repo.sh
+RUN /bin/bash /root/setup_repo.sh
+
+WORKDIR /testbed/
+
+Adding (1) setup scripts to image build repo
+2026-03-27 10:49:38,625 - INFO - [SETUP SCRIPT] setup_repo.sh:
+#!/bin/bash
+set -euxo pipefail
+git clone -o origin  --single-branch https://github.com/sphinx-doc/sphinx /testbed
+chmod -R 777 /testbed
+cd /testbed
+git reset --hard 88b81a06eb635a1596617f8971fa97a84c069e93
+git remote remove origin
+TARGET_TIMESTAMP=$(git show -s --format=%ci 88b81a06eb635a1596617f8971fa97a84c069e93)
+git tag -l | while read tag; do TAG_COMMIT=$(git rev-list -n 1 "$tag"); TAG_TIME=$(git show -s --format=%ci "$TAG_COMMIT"); if [[ "$TAG_TIME" > "$TARGET_TIMESTAMP" ]]; then git tag -d "$tag"; fi; done
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+AFTER_TIMESTAMP=$(date -d "$TARGET_TIMESTAMP + 1 second" '+%Y-%m-%d %H:%M:%S')
+COMMIT_COUNT=$(git log --oneline --all --since="$AFTER_TIMESTAMP" | wc -l)
+[ "$COMMIT_COUNT" -eq 0 ] || exit 1
+source /opt/miniconda3/bin/activate
+conda activate testbed
+echo "Current environment: $CONDA_DEFAULT_ENV"
+sed -i 's/pytest/pytest -rA/' tox.ini
+sed -i 's/Jinja2>=2.3/Jinja2<3.0/' setup.py
+sed -i 's/sphinxcontrib-applehelp/sphinxcontrib-applehelp<=1.0.7/' setup.py
+sed -i 's/sphinxcontrib-devhelp/sphinxcontrib-devhelp<=1.0.5/' setup.py
+sed -i 's/sphinxcontrib-qthelp/sphinxcontrib-qthelp<=1.0.6/' setup.py
+sed -i 's/alabaster>=0.7,<0.8/alabaster>=0.7,<0.7.12/' setup.py
+sed -i "s/'packaging',/'packaging', 'markupsafe<=2.0.1',/" setup.py
+sed -i 's/sphinxcontrib-htmlhelp/sphinxcontrib-htmlhelp<=2.0.4/' setup.py
+sed -i 's/sphinxcontrib-serializinghtml/sphinxcontrib-serializinghtml<=1.1.9/' setup.py
+python -m pip install -e .[test]
+git config --global user.email setup@swebench.config
+git config --global user.name SWE-bench
+git commit --allow-empty -am SWE-bench
+
+2026-03-27 10:49:38,625 - INFO - Building docker image swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8273:latest in logs/build_images/instances/swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8273__latest with platform linux/x86_64
+2026-03-27 10:49:38,631 - INFO - Step 1/5 : FROM --platform=linux/x86_64 sweb.env.py.x86_64.764c21123474adcba1e003:latest
+2026-03-27 10:49:38,631 - INFO - 
+2026-03-27 10:49:38,631 - INFO - ---> 467a360fa43e
+2026-03-27 10:49:38,631 - INFO - Step 2/5 : COPY ./setup_repo.sh /root/
+2026-03-27 10:49:38,631 - INFO - 
+2026-03-27 10:49:38,688 - INFO - ---> 7a2c31798264
+2026-03-27 10:49:38,688 - INFO - Step 3/5 : RUN sed -i -e 's/\r$//' /root/setup_repo.sh
+2026-03-27 10:49:38,688 - INFO - 
+2026-03-27 10:49:38,726 - INFO - ---> [Warning] The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+2026-03-27 10:49:38,726 - INFO - ---> Running in 026ac6f59328
+2026-03-27 10:49:38,991 - INFO - ---> Removed intermediate container 026ac6f59328
+2026-03-27 10:49:38,991 - INFO - ---> b132b316dded
+2026-03-27 10:49:38,991 - INFO - Step 4/5 : RUN /bin/bash /root/setup_repo.sh
+2026-03-27 10:49:38,991 - INFO - 
+2026-03-27 10:49:39,027 - INFO - ---> [Warning] The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+2026-03-27 10:49:39,028 - INFO - ---> Running in c16f002922db
+2026-03-27 10:49:39,144 - INFO - + git clone -o origin --single-branch https://github.com/sphinx-doc/sphinx /testbed
+2026-03-27 10:49:39,162 - INFO - Cloning into '/testbed'...
+2026-03-27 10:49:44,303 - INFO - error: failed to encode 'tests/roots/test-root/wrongenc.inc' from UTF-8 to iso-8859
+2026-03-27 10:49:44,306 - INFO - error: failed to encode 'tests/roots/test-warnings/wrongenc.inc' from UTF-8 to iso-8859
+2026-03-27 10:49:44,321 - INFO - + chmod -R 777 /testbed
+2026-03-27 10:49:44,342 - INFO - + cd /testbed
+2026-03-27 10:49:44,342 - INFO - + git reset --hard 88b81a06eb635a1596617f8971fa97a84c069e93
+2026-03-27 10:49:44,485 - INFO - HEAD is now at 88b81a06e Merge pull request #8272 from francoisfreitag/strip_whitespaces
+2026-03-27 10:49:44,486 - INFO - + git remote remove origin
+2026-03-27 10:49:44,518 - INFO - ++ git show -s --format=%ci 88b81a06eb635a1596617f8971fa97a84c069e93
+2026-03-27 10:49:44,553 - INFO - + TARGET_TIMESTAMP='2020-10-03 21:42:53 +0900'
+2026-03-27 10:49:44,555 - INFO - + git tag -l
++ read tag
+2026-03-27 10:49:44,579 - INFO - ++ git rev-list -n 1 v0.1.61611
+2026-03-27 10:49:44,608 - INFO - + TAG_COMMIT=b2c8c8752ded96ddf18794f7163280e975d968b7
+2026-03-27 10:49:44,609 - INFO - ++ git show -s --format=%ci b2c8c8752ded96ddf18794f7163280e975d968b7
+2026-03-27 10:49:44,643 - INFO - + TAG_TIME='2008-03-21 14:03:25 +0000'
++ [[ 2008-03-21 14:03:25 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:44,644 - INFO - + read tag
+2026-03-27 10:49:44,645 - INFO - ++ git rev-list -n 1 v0.1.61798
+2026-03-27 10:49:44,673 - INFO - + TAG_COMMIT=5d272bdd0d1eb765529f986859fef6b85bfcc68d
+2026-03-27 10:49:44,674 - INFO - ++ git show -s --format=%ci 5d272bdd0d1eb765529f986859fef6b85bfcc68d
+2026-03-27 10:49:44,709 - INFO - + TAG_TIME='2008-03-23 15:07:15 +0000'
+2026-03-27 10:49:44,710 - INFO - + [[ 2008-03-23 15:07:15 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:44,710 - INFO - + read tag
+2026-03-27 10:49:44,711 - INFO - ++ git rev-list -n 1 v0.1.61843
+2026-03-27 10:49:44,740 - INFO - + TAG_COMMIT=59a60d5e9f022f4242f1a6616fb2576a5ca98359
+2026-03-27 10:49:44,740 - INFO - ++ git show -s --format=%ci 59a60d5e9f022f4242f1a6616fb2576a5ca98359
+2026-03-27 10:49:44,773 - INFO - + TAG_TIME='2008-03-24 09:43:00 +0000'
++ [[ 2008-03-24 09:43:00 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:44,774 - INFO - ++ git rev-list -n 1 v0.1.61945
+2026-03-27 10:49:44,803 - INFO - + TAG_COMMIT=8125b6b2af515684d5df8446dcadc07ee3eb9ddf
+2026-03-27 10:49:44,804 - INFO - ++ git show -s --format=%ci 8125b6b2af515684d5df8446dcadc07ee3eb9ddf
+2026-03-27 10:49:44,838 - INFO - + TAG_TIME='2008-03-26 13:13:42 +0000'
+2026-03-27 10:49:44,838 - INFO - + [[ 2008-03-26 13:13:42 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:44,838 - INFO - + read tag
+2026-03-27 10:49:44,839 - INFO - ++ git rev-list -n 1 v0.1.61950
+2026-03-27 10:49:44,868 - INFO - + TAG_COMMIT=5b0232ad4301e08374c7275d4852ff0c6dc596a5
+2026-03-27 10:49:44,869 - INFO - ++ git show -s --format=%ci 5b0232ad4301e08374c7275d4852ff0c6dc596a5
+2026-03-27 10:49:44,903 - INFO - + TAG_TIME='2008-03-26 15:34:47 +0000'
+2026-03-27 10:49:44,903 - INFO - + [[ 2008-03-26 15:34:47 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:44,903 - INFO - + read tag
+2026-03-27 10:49:44,905 - INFO - ++ git rev-list -n 1 v0.2
+2026-03-27 10:49:44,936 - INFO - + TAG_COMMIT=47f0113778ca9a3b6dd806a9a08ec5e6e3258b86
+2026-03-27 10:49:44,936 - INFO - ++ git show -s --format=%ci 47f0113778ca9a3b6dd806a9a08ec5e6e3258b86
+2026-03-27 10:49:44,970 - INFO - + TAG_TIME='2008-04-27 20:08:05 +0000'
++ [[ 2008-04-27 20:08:05 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:44,971 - INFO - ++ git rev-list -n 1 v0.3
+2026-03-27 10:49:45,001 - INFO - + TAG_COMMIT=356d5f6ed780845af68f4efe699a415b8e14da68
+2026-03-27 10:49:45,001 - INFO - ++ git show -s --format=%ci 356d5f6ed780845af68f4efe699a415b8e14da68
+2026-03-27 10:49:45,036 - INFO - + TAG_TIME='2008-05-06 07:23:08 +0000'
+2026-03-27 10:49:45,036 - INFO - + [[ 2008-05-06 07:23:08 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:45,036 - INFO - + read tag
+2026-03-27 10:49:45,037 - INFO - ++ git rev-list -n 1 v0.4
+2026-03-27 10:49:45,064 - INFO - + TAG_COMMIT=a8bc1187dda7bf8f4db0fedc883ddeadb9f420e9
+2026-03-27 10:49:45,068 - INFO - ++ git show -s --format=%ci a8bc1187dda7bf8f4db0fedc883ddeadb9f420e9
+2026-03-27 10:49:45,100 - INFO - + TAG_TIME='2008-06-23 12:37:53 +0000'
+2026-03-27 10:49:45,100 - INFO - + [[ 2008-06-23 12:37:53 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,101 - INFO - ++ git rev-list -n 1 v0.5
+2026-03-27 10:49:45,129 - INFO - + TAG_COMMIT=9cce898a36979ba688799024017712a0301a34ca
+2026-03-27 10:49:45,130 - INFO - ++ git show -s --format=%ci 9cce898a36979ba688799024017712a0301a34ca
+2026-03-27 10:49:45,164 - INFO - + TAG_TIME='2008-11-23 19:02:32 +0100'
++ [[ 2008-11-23 19:02:32 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,165 - INFO - ++ git rev-list -n 1 v0.5.1
+2026-03-27 10:49:45,194 - INFO - + TAG_COMMIT=3f8d3b634f282514e22683681d7db6b566ca6d44
+2026-03-27 10:49:45,195 - INFO - ++ git show -s --format=%ci 3f8d3b634f282514e22683681d7db6b566ca6d44
+2026-03-27 10:49:45,228 - INFO - + TAG_TIME='2008-12-15 21:55:50 +0100'
+2026-03-27 10:49:45,228 - INFO - + [[ 2008-12-15 21:55:50 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,229 - INFO - ++ git rev-list -n 1 v0.5.2
+2026-03-27 10:49:45,258 - INFO - + TAG_COMMIT=ecf20b3f7bf13aed37ec4d331520582c76c973d5
+2026-03-27 10:49:45,259 - INFO - ++ git show -s --format=%ci ecf20b3f7bf13aed37ec4d331520582c76c973d5
+2026-03-27 10:49:45,292 - INFO - + TAG_TIME='2009-03-24 08:17:24 +0000'
++ [[ 2009-03-24 08:17:24 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,292 - INFO - ++ git rev-list -n 1 v0.5.2b1
+2026-03-27 10:49:45,323 - INFO - + TAG_COMMIT=fe8fba29237b7b156ff4b9acb20d0f391deb2757
+2026-03-27 10:49:45,324 - INFO - ++ git show -s --format=%ci fe8fba29237b7b156ff4b9acb20d0f391deb2757
+2026-03-27 10:49:45,359 - INFO - + TAG_TIME='2009-03-16 23:51:02 +0100'
++ [[ 2009-03-16 23:51:02 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:45,359 - INFO - + read tag
+2026-03-27 10:49:45,360 - INFO - ++ git rev-list -n 1 v0.6
+2026-03-27 10:49:45,390 - INFO - + TAG_COMMIT=96689eec28c1b70e0871b907f7d0e277cb019e3f
+++ git show -s --format=%ci 96689eec28c1b70e0871b907f7d0e277cb019e3f
+2026-03-27 10:49:45,425 - INFO - + TAG_TIME='2009-03-24 21:45:17 +0100'
++ [[ 2009-03-24 21:45:17 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,426 - INFO - ++ git rev-list -n 1 v0.6.1
+2026-03-27 10:49:45,454 - INFO - + TAG_COMMIT=07ef8c9f9944a02d11fe27e9dfe3817140c92f18
+2026-03-27 10:49:45,455 - INFO - ++ git show -s --format=%ci 07ef8c9f9944a02d11fe27e9dfe3817140c92f18
+2026-03-27 10:49:45,489 - INFO - + TAG_TIME='2009-03-26 17:57:56 +0100'
+2026-03-27 10:49:45,489 - INFO - + [[ 2009-03-26 17:57:56 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:45,489 - INFO - + read tag
+2026-03-27 10:49:45,491 - INFO - ++ git rev-list -n 1 v0.6.2
+2026-03-27 10:49:45,522 - INFO - + TAG_COMMIT=b4921a48c5b5deaabd612fe712e29f0d973e60bd
+2026-03-27 10:49:45,522 - INFO - ++ git show -s --format=%ci b4921a48c5b5deaabd612fe712e29f0d973e60bd
+2026-03-27 10:49:45,558 - INFO - + TAG_TIME='2009-06-16 23:45:41 +0200'
+2026-03-27 10:49:45,558 - INFO - + [[ 2009-06-16 23:45:41 +0200 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:45,558 - INFO - + read tag
+2026-03-27 10:49:45,559 - INFO - ++ git rev-list -n 1 v0.6.3
+2026-03-27 10:49:45,588 - INFO - + TAG_COMMIT=aea14370d90ff203080f3b442fa50fa405b589b9
+2026-03-27 10:49:45,589 - INFO - ++ git show -s --format=%ci aea14370d90ff203080f3b442fa50fa405b589b9
+2026-03-27 10:49:45,624 - INFO - + TAG_TIME='2009-09-04 00:06:12 +0200'
++ [[ 2009-09-04 00:06:12 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,625 - INFO - ++ git rev-list -n 1 v0.6.4
+2026-03-27 10:49:45,654 - INFO - + TAG_COMMIT=872062f93b6ba2adebe369e4f38e6b45c3979101
+2026-03-27 10:49:45,655 - INFO - ++ git show -s --format=%ci 872062f93b6ba2adebe369e4f38e6b45c3979101
+2026-03-27 10:49:45,688 - INFO - + TAG_TIME='2010-01-12 20:55:59 +0000'
++ [[ 2010-01-12 20:55:59 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,689 - INFO - ++ git rev-list -n 1 v0.6.5
+2026-03-27 10:49:45,719 - INFO - + TAG_COMMIT=e9fe355ecd2769e8c24b7a3239e2c277e06499fd
+2026-03-27 10:49:45,720 - INFO - ++ git show -s --format=%ci e9fe355ecd2769e8c24b7a3239e2c277e06499fd
+2026-03-27 10:49:45,754 - INFO - + TAG_TIME='2010-03-01 23:12:59 +0100'
++ [[ 2010-03-01 23:12:59 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,754 - INFO - ++ git rev-list -n 1 v0.6.6
+2026-03-27 10:49:45,783 - INFO - + TAG_COMMIT=4a796be021bc0e93c5fb40b12251b2bf079fa0b0
+2026-03-27 10:49:45,784 - INFO - ++ git show -s --format=%ci 4a796be021bc0e93c5fb40b12251b2bf079fa0b0
+2026-03-27 10:49:45,818 - INFO - + TAG_TIME='2010-05-25 00:53:40 +0200'
++ [[ 2010-05-25 00:53:40 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,819 - INFO - ++ git rev-list -n 1 v0.6.7
+2026-03-27 10:49:45,847 - INFO - + TAG_COMMIT=08285e6a50e4138b516100c3d1079ff11ce07969
+2026-03-27 10:49:45,848 - INFO - ++ git show -s --format=%ci 08285e6a50e4138b516100c3d1079ff11ce07969
+2026-03-27 10:49:45,882 - INFO - + TAG_TIME='2010-06-05 18:42:11 +0200'
++ [[ 2010-06-05 18:42:11 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,882 - INFO - ++ git rev-list -n 1 v0.6b1
+2026-03-27 10:49:45,910 - INFO - + TAG_COMMIT=7c6c3da0b6ae7b049a771150a49e589a45de83ff
+2026-03-27 10:49:45,911 - INFO - ++ git show -s --format=%ci 7c6c3da0b6ae7b049a771150a49e589a45de83ff
+2026-03-27 10:49:45,954 - INFO - + TAG_TIME='2009-03-16 23:56:42 +0100'
++ [[ 2009-03-16 23:56:42 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:45,955 - INFO - ++ git rev-list -n 1 v1.0
+2026-03-27 10:49:45,984 - INFO - + TAG_COMMIT=690fc257e9a539a4c193ba8efe5587f7c102785c
+2026-03-27 10:49:45,985 - INFO - ++ git show -s --format=%ci 690fc257e9a539a4c193ba8efe5587f7c102785c
+2026-03-27 10:49:46,019 - INFO - + TAG_TIME='2010-07-23 14:15:33 +0100'
+2026-03-27 10:49:46,019 - INFO - + [[ 2010-07-23 14:15:33 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:46,019 - INFO - + read tag
+2026-03-27 10:49:46,020 - INFO - ++ git rev-list -n 1 v1.0.1
+2026-03-27 10:49:46,049 - INFO - + TAG_COMMIT=6262c275a750d36402ba430f3f01ffaca18b3098
+2026-03-27 10:49:46,050 - INFO - ++ git show -s --format=%ci 6262c275a750d36402ba430f3f01ffaca18b3098
+2026-03-27 10:49:46,084 - INFO - + TAG_TIME='2010-07-27 19:40:19 +0200'
++ [[ 2010-07-27 19:40:19 +0200 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:46,084 - INFO - + read tag
+2026-03-27 10:49:46,085 - INFO - ++ git rev-list -n 1 v1.0.2
+2026-03-27 10:49:46,114 - INFO - + TAG_COMMIT=d1cc9be1d00bfe88887aeec74ec34f81edefb9fa
+2026-03-27 10:49:46,115 - INFO - ++ git show -s --format=%ci d1cc9be1d00bfe88887aeec74ec34f81edefb9fa
+2026-03-27 10:49:46,148 - INFO - + TAG_TIME='2010-08-14 17:09:23 +0200'
+2026-03-27 10:49:46,148 - INFO - + [[ 2010-08-14 17:09:23 +0200 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:46,149 - INFO - + read tag
+2026-03-27 10:49:46,150 - INFO - ++ git rev-list -n 1 v1.0.3
+2026-03-27 10:49:46,180 - INFO - + TAG_COMMIT=7f66b593004d828f54697c7e6f4d912114e5147b
+2026-03-27 10:49:46,180 - INFO - ++ git show -s --format=%ci 7f66b593004d828f54697c7e6f4d912114e5147b
+2026-03-27 10:49:46,213 - INFO - + TAG_TIME='2010-08-23 17:06:44 +0000'
+2026-03-27 10:49:46,213 - INFO - + [[ 2010-08-23 17:06:44 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,214 - INFO - ++ git rev-list -n 1 v1.0.4
+2026-03-27 10:49:46,244 - INFO - + TAG_COMMIT=a3afc2a202a9a093597a4c3864672c368d2b4c18
+2026-03-27 10:49:46,248 - INFO - ++ git show -s --format=%ci a3afc2a202a9a093597a4c3864672c368d2b4c18
+2026-03-27 10:49:46,280 - INFO - + TAG_TIME='2010-09-17 10:02:07 +0200'
++ [[ 2010-09-17 10:02:07 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,281 - INFO - ++ git rev-list -n 1 v1.0.5
+2026-03-27 10:49:46,314 - INFO - + TAG_COMMIT=ffd9268a658d0485afe2de9c6c30f7f885fac0ba
+2026-03-27 10:49:46,314 - INFO - ++ git show -s --format=%ci ffd9268a658d0485afe2de9c6c30f7f885fac0ba
+2026-03-27 10:49:46,347 - INFO - + TAG_TIME='2010-11-12 08:35:03 +0100'
+2026-03-27 10:49:46,348 - INFO - + [[ 2010-11-12 08:35:03 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,349 - INFO - ++ git rev-list -n 1 v1.0.6
+2026-03-27 10:49:46,379 - INFO - + TAG_COMMIT=4db4fdc0c3c4635a68f149883722af3ea00f0025
+2026-03-27 10:49:46,380 - INFO - ++ git show -s --format=%ci 4db4fdc0c3c4635a68f149883722af3ea00f0025
+2026-03-27 10:49:46,416 - INFO - + TAG_TIME='2011-01-04 23:43:29 +0100'
+2026-03-27 10:49:46,416 - INFO - + [[ 2011-01-04 23:43:29 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:46,416 - INFO - + read tag
+2026-03-27 10:49:46,418 - INFO - ++ git rev-list -n 1 v1.0.7
+2026-03-27 10:49:46,450 - INFO - + TAG_COMMIT=8ba7d97fa799848fec82dbed4d7377cb638a2565
+2026-03-27 10:49:46,450 - INFO - ++ git show -s --format=%ci 8ba7d97fa799848fec82dbed4d7377cb638a2565
+2026-03-27 10:49:46,485 - INFO - + TAG_TIME='2011-01-15 16:25:43 +0100'
++ [[ 2011-01-15 16:25:43 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,486 - INFO - ++ git rev-list -n 1 v1.0.8
+2026-03-27 10:49:46,514 - INFO - + TAG_COMMIT=be6aa3940e2efc0a9372072ea4e6ae4525f0a2cc
+2026-03-27 10:49:46,515 - INFO - ++ git show -s --format=%ci be6aa3940e2efc0a9372072ea4e6ae4525f0a2cc
+2026-03-27 10:49:46,548 - INFO - + TAG_TIME='2011-09-23 21:58:09 +0200'
++ [[ 2011-09-23 21:58:09 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,549 - INFO - ++ git rev-list -n 1 v1.0b1
+2026-03-27 10:49:46,578 - INFO - + TAG_COMMIT=785cfa2560d50b52997c8b18314d2cd55fe10437
+2026-03-27 10:49:46,580 - INFO - ++ git show -s --format=%ci 785cfa2560d50b52997c8b18314d2cd55fe10437
+2026-03-27 10:49:46,612 - INFO - + TAG_TIME='2010-05-25 01:17:03 +0200'
++ [[ 2010-05-25 01:17:03 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,613 - INFO - ++ git rev-list -n 1 v1.0b2
+2026-03-27 10:49:46,642 - INFO - + TAG_COMMIT=0a91ac75b7d0b3d5ba415723f797df9604a3f997
+2026-03-27 10:49:46,643 - INFO - ++ git show -s --format=%ci 0a91ac75b7d0b3d5ba415723f797df9604a3f997
+2026-03-27 10:49:46,678 - INFO - + TAG_TIME='2010-05-30 19:52:08 +0200'
++ [[ 2010-05-30 19:52:08 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,678 - INFO - ++ git rev-list -n 1 v1.1
+2026-03-27 10:49:46,707 - INFO - + TAG_COMMIT=de117ea97421352c44cde2ad1ce773722336e91a
+2026-03-27 10:49:46,708 - INFO - ++ git show -s --format=%ci de117ea97421352c44cde2ad1ce773722336e91a
+2026-03-27 10:49:46,741 - INFO - + TAG_TIME='2011-10-09 23:25:40 +0200'
++ [[ 2011-10-09 23:25:40 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,742 - INFO - ++ git rev-list -n 1 v1.1.1
+2026-03-27 10:49:46,770 - INFO - + TAG_COMMIT=313a428fa870d04529d77e0d470cb9a66662dd53
+2026-03-27 10:49:46,771 - INFO - ++ git show -s --format=%ci 313a428fa870d04529d77e0d470cb9a66662dd53
+2026-03-27 10:49:46,805 - INFO - + TAG_TIME='2011-11-01 15:24:26 +0100'
++ [[ 2011-11-01 15:24:26 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,806 - INFO - ++ git rev-list -n 1 v1.1.2
+2026-03-27 10:49:46,833 - INFO - + TAG_COMMIT=cc1ca3a43a18ad961760e7dbfc3535eddec6da79
+2026-03-27 10:49:46,834 - INFO - ++ git show -s --format=%ci cc1ca3a43a18ad961760e7dbfc3535eddec6da79
+2026-03-27 10:49:46,867 - INFO - + TAG_TIME='2011-11-01 21:40:52 +0100'
+2026-03-27 10:49:46,867 - INFO - + [[ 2011-11-01 21:40:52 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:46,867 - INFO - + read tag
+2026-03-27 10:49:46,868 - INFO - ++ git rev-list -n 1 v1.1.3
+2026-03-27 10:49:46,896 - INFO - + TAG_COMMIT=9bff8f206c178d973457adcb16ac9c55973257c0
+2026-03-27 10:49:46,897 - INFO - ++ git show -s --format=%ci 9bff8f206c178d973457adcb16ac9c55973257c0
+2026-03-27 10:49:46,929 - INFO - + TAG_TIME='2012-03-10 21:50:06 +0100'
++ [[ 2012-03-10 21:50:06 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,930 - INFO - ++ git rev-list -n 1 v1.2
+2026-03-27 10:49:46,958 - INFO - + TAG_COMMIT=2a86eff841ffc9916995f5831113c15e68d8b901
+2026-03-27 10:49:46,958 - INFO - ++ git show -s --format=%ci 2a86eff841ffc9916995f5831113c15e68d8b901
+2026-03-27 10:49:46,991 - INFO - + TAG_TIME='2013-12-10 10:24:44 +0100'
+2026-03-27 10:49:46,991 - INFO - + [[ 2013-12-10 10:24:44 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:46,992 - INFO - ++ git rev-list -n 1 v1.2.1
+2026-03-27 10:49:47,022 - INFO - + TAG_COMMIT=8ef6226e3182633887767f72acdda852cba44194
+2026-03-27 10:49:47,023 - INFO - ++ git show -s --format=%ci 8ef6226e3182633887767f72acdda852cba44194
+2026-03-27 10:49:47,055 - INFO - + TAG_TIME='2014-01-19 18:47:49 +0100'
++ [[ 2014-01-19 18:47:49 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,056 - INFO - ++ git rev-list -n 1 v1.2.2
+2026-03-27 10:49:47,084 - INFO - + TAG_COMMIT=6a9fca835cd18519a9ef17b7b1296c3fe9d926ac
+2026-03-27 10:49:47,084 - INFO - ++ git show -s --format=%ci 6a9fca835cd18519a9ef17b7b1296c3fe9d926ac
+2026-03-27 10:49:47,117 - INFO - + TAG_TIME='2014-03-02 08:41:38 +0100'
++ [[ 2014-03-02 08:41:38 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,117 - INFO - + read tag
+2026-03-27 10:49:47,118 - INFO - ++ git rev-list -n 1 v1.2.3
+2026-03-27 10:49:47,146 - INFO - + TAG_COMMIT=b4620a38887b1195b26e7b2fa5552bbfd2b9f6b7
+2026-03-27 10:49:47,147 - INFO - ++ git show -s --format=%ci b4620a38887b1195b26e7b2fa5552bbfd2b9f6b7
+2026-03-27 10:49:47,179 - INFO - + TAG_TIME='2014-09-01 23:20:28 +0900'
++ [[ 2014-09-01 23:20:28 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,180 - INFO - ++ git rev-list -n 1 v1.2b1
+2026-03-27 10:49:47,208 - INFO - + TAG_COMMIT=0b41ccb0057eb95995e6340f4bcffbfae3acc8a8
+2026-03-27 10:49:47,209 - INFO - ++ git show -s --format=%ci 0b41ccb0057eb95995e6340f4bcffbfae3acc8a8
+2026-03-27 10:49:47,242 - INFO - + TAG_TIME='2013-03-31 15:45:44 +0200'
++ [[ 2013-03-31 15:45:44 +0200 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,242 - INFO - + read tag
+2026-03-27 10:49:47,242 - INFO - ++ git rev-list -n 1 v1.2b2
+2026-03-27 10:49:47,270 - INFO - + TAG_COMMIT=8da68a8d66a47535f9ff85ba98b8805e1ba6ec9e
+2026-03-27 10:49:47,271 - INFO - ++ git show -s --format=%ci 8da68a8d66a47535f9ff85ba98b8805e1ba6ec9e
+2026-03-27 10:49:47,303 - INFO - + TAG_TIME='2013-09-17 15:46:04 +0200'
+2026-03-27 10:49:47,303 - INFO - + [[ 2013-09-17 15:46:04 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,304 - INFO - ++ git rev-list -n 1 v1.2b3
+2026-03-27 10:49:47,332 - INFO - + TAG_COMMIT=3cd645f31e2a092533d960e60bdbda9bf49ac65e
+2026-03-27 10:49:47,333 - INFO - ++ git show -s --format=%ci 3cd645f31e2a092533d960e60bdbda9bf49ac65e
+2026-03-27 10:49:47,366 - INFO - + TAG_TIME='2013-10-03 19:56:38 +0200'
++ [[ 2013-10-03 19:56:38 +0200 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,367 - INFO - ++ git rev-list -n 1 v1.3
+2026-03-27 10:49:47,395 - INFO - + TAG_COMMIT=b87ce32e7dc09773f9e71305e66e8d6aead53dd1
+2026-03-27 10:49:47,396 - INFO - ++ git show -s --format=%ci b87ce32e7dc09773f9e71305e66e8d6aead53dd1
+2026-03-27 10:49:47,429 - INFO - + TAG_TIME='2015-03-11 06:45:00 +0900'
++ [[ 2015-03-11 06:45:00 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,430 - INFO - ++ git rev-list -n 1 v1.3.1
+2026-03-27 10:49:47,458 - INFO - + TAG_COMMIT=a4083dde29022eecf26281cf23f54ea586520ec9
+2026-03-27 10:49:47,459 - INFO - ++ git show -s --format=%ci a4083dde29022eecf26281cf23f54ea586520ec9
+2026-03-27 10:49:47,492 - INFO - + TAG_TIME='2015-03-17 14:30:11 +0900'
+2026-03-27 10:49:47,492 - INFO - + [[ 2015-03-17 14:30:11 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,493 - INFO - ++ git rev-list -n 1 v1.3.2
+2026-03-27 10:49:47,522 - INFO - + TAG_COMMIT=6d0df203e41f31721ead92d31974f05f99382804
+2026-03-27 10:49:47,522 - INFO - ++ git show -s --format=%ci 6d0df203e41f31721ead92d31974f05f99382804
+2026-03-27 10:49:47,555 - INFO - + TAG_TIME='2015-11-29 13:28:56 +0000'
++ [[ 2015-11-29 13:28:56 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,555 - INFO - + read tag
+2026-03-27 10:49:47,556 - INFO - ++ git rev-list -n 1 v1.3.3
+2026-03-27 10:49:47,584 - INFO - + TAG_COMMIT=bfcfed2fe65c8d1ab8419b6b8cbeae421cd0bdee
+2026-03-27 10:49:47,585 - INFO - ++ git show -s --format=%ci bfcfed2fe65c8d1ab8419b6b8cbeae421cd0bdee
+2026-03-27 10:49:47,617 - INFO - + TAG_TIME='2015-12-02 18:25:39 +0900'
++ [[ 2015-12-02 18:25:39 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,617 - INFO - + read tag
+2026-03-27 10:49:47,617 - INFO - ++ git rev-list -n 1 v1.3.4
+2026-03-27 10:49:47,645 - INFO - + TAG_COMMIT=8e7107b1a2d0fa55a5b81bb95073e8ab4dfa971b
+2026-03-27 10:49:47,647 - INFO - ++ git show -s --format=%ci 8e7107b1a2d0fa55a5b81bb95073e8ab4dfa971b
+2026-03-27 10:49:47,679 - INFO - + TAG_TIME='2016-01-12 23:57:44 +0900'
++ [[ 2016-01-12 23:57:44 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,679 - INFO - + read tag
+2026-03-27 10:49:47,680 - INFO - ++ git rev-list -n 1 v1.3.5
+2026-03-27 10:49:47,708 - INFO - + TAG_COMMIT=50951bdc9814109df848e12dd08b6a6bbdb01889
+2026-03-27 10:49:47,709 - INFO - ++ git show -s --format=%ci 50951bdc9814109df848e12dd08b6a6bbdb01889
+2026-03-27 10:49:47,742 - INFO - + TAG_TIME='2016-01-24 12:31:34 +0900'
++ [[ 2016-01-24 12:31:34 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,744 - INFO - ++ git rev-list -n 1 v1.3.6
+2026-03-27 10:49:47,771 - INFO - + TAG_COMMIT=9ec5305bba279787911d191fa8168ccab432fba7
+2026-03-27 10:49:47,773 - INFO - ++ git show -s --format=%ci 9ec5305bba279787911d191fa8168ccab432fba7
+2026-03-27 10:49:47,804 - INFO - + TAG_TIME='2016-02-29 22:47:46 +0900'
++ [[ 2016-02-29 22:47:46 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:47,804 - INFO - + read tag
+2026-03-27 10:49:47,805 - INFO - ++ git rev-list -n 1 v1.3b1
+2026-03-27 10:49:47,834 - INFO - + TAG_COMMIT=13237708638021fcc288eefca10be4f52e31acba
+2026-03-27 10:49:47,835 - INFO - ++ git show -s --format=%ci 13237708638021fcc288eefca10be4f52e31acba
+2026-03-27 10:49:47,868 - INFO - + TAG_TIME='2014-10-09 15:05:46 +0000'
+2026-03-27 10:49:47,868 - INFO - + [[ 2014-10-09 15:05:46 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,869 - INFO - ++ git rev-list -n 1 v1.3b2
+2026-03-27 10:49:47,896 - INFO - + TAG_COMMIT=4a28a1297728fcf9d74813619fd5f3606f372de2
+2026-03-27 10:49:47,897 - INFO - ++ git show -s --format=%ci 4a28a1297728fcf9d74813619fd5f3606f372de2
+2026-03-27 10:49:47,929 - INFO - + TAG_TIME='2014-12-05 10:46:18 +0000'
++ [[ 2014-12-05 10:46:18 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,930 - INFO - ++ git rev-list -n 1 v1.3b3
+2026-03-27 10:49:47,958 - INFO - + TAG_COMMIT=567af236410bb39206c49e7b8af0a37d31beb0ee
+2026-03-27 10:49:47,958 - INFO - ++ git show -s --format=%ci 567af236410bb39206c49e7b8af0a37d31beb0ee
+2026-03-27 10:49:47,991 - INFO - + TAG_TIME='2015-02-24 22:51:25 +0900'
+2026-03-27 10:49:47,991 - INFO - + [[ 2015-02-24 22:51:25 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:47,992 - INFO - ++ git rev-list -n 1 v1.4
+2026-03-27 10:49:48,020 - INFO - + TAG_COMMIT=27fb3b6be36bca57b048e0837c1351b954a062ea
+2026-03-27 10:49:48,021 - INFO - ++ git show -s --format=%ci 27fb3b6be36bca57b048e0837c1351b954a062ea
+2026-03-27 10:49:48,054 - INFO - + TAG_TIME='2016-03-28 21:51:00 +0900'
++ [[ 2016-03-28 21:51:00 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:48,054 - INFO - ++ git rev-list -n 1 v1.4.1
+2026-03-27 10:49:48,082 - INFO - + TAG_COMMIT=47681a063801df44c0bfbea0b0c4b4efe7bcd191
+2026-03-27 10:49:48,083 - INFO - ++ git show -s --format=%ci 47681a063801df44c0bfbea0b0c4b4efe7bcd191
+2026-03-27 10:49:48,116 - INFO - + TAG_TIME='2016-04-12 22:12:19 +0900'
++ [[ 2016-04-12 22:12:19 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:48,118 - INFO - ++ git rev-list -n 1 v1.4.2
+2026-03-27 10:49:48,145 - INFO - + TAG_COMMIT=1fbc0c9a1611e343e1386daa01c6229ffeab7555
+2026-03-27 10:49:48,146 - INFO - ++ git show -s --format=%ci 1fbc0c9a1611e343e1386daa01c6229ffeab7555
+2026-03-27 10:49:48,180 - INFO - + TAG_TIME='2016-05-29 17:20:19 +0900'
++ [[ 2016-05-29 17:20:19 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,180 - INFO - + read tag
+2026-03-27 10:49:48,181 - INFO - ++ git rev-list -n 1 v1.4.3
+2026-03-27 10:49:48,208 - INFO - + TAG_COMMIT=8b5ee35a7c2c3394572f5c37b995abf39bf951de
+2026-03-27 10:49:48,209 - INFO - ++ git show -s --format=%ci 8b5ee35a7c2c3394572f5c37b995abf39bf951de
+2026-03-27 10:49:48,242 - INFO - + TAG_TIME='2016-06-05 17:09:12 +0900'
++ [[ 2016-06-05 17:09:12 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,242 - INFO - + read tag
+2026-03-27 10:49:48,243 - INFO - ++ git rev-list -n 1 v1.4.4
+2026-03-27 10:49:48,271 - INFO - + TAG_COMMIT=93b3860597571545d3f2d57af376562b193f9d3f
+2026-03-27 10:49:48,271 - INFO - ++ git show -s --format=%ci 93b3860597571545d3f2d57af376562b193f9d3f
+2026-03-27 10:49:48,304 - INFO - + TAG_TIME='2016-06-12 21:37:52 +0900'
++ [[ 2016-06-12 21:37:52 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,304 - INFO - + read tag
+2026-03-27 10:49:48,305 - INFO - ++ git rev-list -n 1 v1.4.5
+2026-03-27 10:49:48,333 - INFO - + TAG_COMMIT=effc597cb5ba054c0ea0b917e33c6dabd005a319
+2026-03-27 10:49:48,334 - INFO - ++ git show -s --format=%ci effc597cb5ba054c0ea0b917e33c6dabd005a319
+2026-03-27 10:49:48,367 - INFO - + TAG_TIME='2016-07-13 21:20:14 +0900'
++ [[ 2016-07-13 21:20:14 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,367 - INFO - + read tag
+2026-03-27 10:49:48,368 - INFO - ++ git rev-list -n 1 v1.4.6
+2026-03-27 10:49:48,395 - INFO - + TAG_COMMIT=4168b0bd20da33768a0028f6693ace07fd16f908
+2026-03-27 10:49:48,397 - INFO - ++ git show -s --format=%ci 4168b0bd20da33768a0028f6693ace07fd16f908
+2026-03-27 10:49:48,429 - INFO - + TAG_TIME='2016-08-20 18:00:04 +0900'
++ [[ 2016-08-20 18:00:04 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,429 - INFO - + read tag
+2026-03-27 10:49:48,430 - INFO - ++ git rev-list -n 1 v1.4.7
+2026-03-27 10:49:48,458 - INFO - + TAG_COMMIT=1406f6b63e5cbe0726f22b24e483c7e95b836815
+2026-03-27 10:49:48,459 - INFO - ++ git show -s --format=%ci 1406f6b63e5cbe0726f22b24e483c7e95b836815
+2026-03-27 10:49:48,492 - INFO - + TAG_TIME='2016-10-01 22:32:32 +0900'
++ [[ 2016-10-01 22:32:32 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,492 - INFO - + read tag
+2026-03-27 10:49:48,493 - INFO - ++ git rev-list -n 1 v1.4.8
+2026-03-27 10:49:48,523 - INFO - + TAG_COMMIT=007c855c9c6fe39f5197571a0c34b7caa3c881e4
+2026-03-27 10:49:48,524 - INFO - ++ git show -s --format=%ci 007c855c9c6fe39f5197571a0c34b7caa3c881e4
+2026-03-27 10:49:48,556 - INFO - + TAG_TIME='2016-10-02 00:37:59 +0900'
++ [[ 2016-10-02 00:37:59 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:48,557 - INFO - ++ git rev-list -n 1 v1.4.9
+2026-03-27 10:49:48,585 - INFO - + TAG_COMMIT=fa302485f3d6b574273030df3e903db135324e72
+2026-03-27 10:49:48,586 - INFO - ++ git show -s --format=%ci fa302485f3d6b574273030df3e903db135324e72
+2026-03-27 10:49:48,618 - INFO - + TAG_TIME='2016-11-23 23:26:12 +0900'
++ [[ 2016-11-23 23:26:12 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:48,619 - INFO - ++ git rev-list -n 1 v1.4b1
+2026-03-27 10:49:48,648 - INFO - + TAG_COMMIT=dc32f6f4a43ddea1e2abae0073c05bdf25aef97c
+2026-03-27 10:49:48,648 - INFO - ++ git show -s --format=%ci dc32f6f4a43ddea1e2abae0073c05bdf25aef97c
+2026-03-27 10:49:48,681 - INFO - + TAG_TIME='2016-03-06 22:02:35 +0900'
++ [[ 2016-03-06 22:02:35 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:48,682 - INFO - ++ git rev-list -n 1 v1.5
+2026-03-27 10:49:48,710 - INFO - + TAG_COMMIT=9f3a95e1da6c8a026df0b197e9d941f963341c38
+2026-03-27 10:49:48,711 - INFO - ++ git show -s --format=%ci 9f3a95e1da6c8a026df0b197e9d941f963341c38
+2026-03-27 10:49:48,743 - INFO - + TAG_TIME='2016-12-05 13:36:52 +0900'
++ [[ 2016-12-05 13:36:52 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,743 - INFO - + read tag
+2026-03-27 10:49:48,744 - INFO - ++ git rev-list -n 1 v1.5.1
+2026-03-27 10:49:48,772 - INFO - + TAG_COMMIT=794f6bdca4aaf81f8162e9469d6d74343cee0c31
+2026-03-27 10:49:48,773 - INFO - ++ git show -s --format=%ci 794f6bdca4aaf81f8162e9469d6d74343cee0c31
+2026-03-27 10:49:48,806 - INFO - + TAG_TIME='2016-12-14 00:01:49 +0900'
++ [[ 2016-12-14 00:01:49 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,806 - INFO - + read tag
+2026-03-27 10:49:48,807 - INFO - ++ git rev-list -n 1 v1.5.2
+2026-03-27 10:49:48,834 - INFO - + TAG_COMMIT=b1a3ff61b7837423f85e2bf488d12c766ce4d0b5
+2026-03-27 10:49:48,835 - INFO - ++ git show -s --format=%ci b1a3ff61b7837423f85e2bf488d12c766ce4d0b5
+2026-03-27 10:49:48,868 - INFO - + TAG_TIME='2017-01-22 17:24:32 +0900'
++ [[ 2017-01-22 17:24:32 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,868 - INFO - + read tag
+2026-03-27 10:49:48,869 - INFO - ++ git rev-list -n 1 v1.5.3
+2026-03-27 10:49:48,896 - INFO - + TAG_COMMIT=715eb45755d9c53d4b9a94535251a21e68378a8d
+2026-03-27 10:49:48,897 - INFO - ++ git show -s --format=%ci 715eb45755d9c53d4b9a94535251a21e68378a8d
+2026-03-27 10:49:48,930 - INFO - + TAG_TIME='2017-02-26 15:49:56 +0900'
+2026-03-27 10:49:48,930 - INFO - + [[ 2017-02-26 15:49:56 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,931 - INFO - + read tag
+2026-03-27 10:49:48,931 - INFO - ++ git rev-list -n 1 v1.5.4
+2026-03-27 10:49:48,959 - INFO - + TAG_COMMIT=f730297187017b5262872314151255b248f20647
+2026-03-27 10:49:48,960 - INFO - ++ git show -s --format=%ci f730297187017b5262872314151255b248f20647
+2026-03-27 10:49:48,992 - INFO - + TAG_TIME='2017-04-02 18:58:22 +0900'
++ [[ 2017-04-02 18:58:22 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:48,992 - INFO - + read tag
+2026-03-27 10:49:48,994 - INFO - ++ git rev-list -n 1 v1.5.5
+2026-03-27 10:49:49,021 - INFO - + TAG_COMMIT=5dd51a7fa490d96425962fd6e942d6ae6ca74cd2
+2026-03-27 10:49:49,022 - INFO - ++ git show -s --format=%ci 5dd51a7fa490d96425962fd6e942d6ae6ca74cd2
+2026-03-27 10:49:49,054 - INFO - + TAG_TIME='2017-04-04 00:34:52 +0900'
++ [[ 2017-04-04 00:34:52 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:49,055 - INFO - + read tag
+2026-03-27 10:49:49,055 - INFO - ++ git rev-list -n 1 v1.5.6
+2026-03-27 10:49:49,084 - INFO - + TAG_COMMIT=f27d9447e09ad118c153f549a4aed4cad7d13c06
+2026-03-27 10:49:49,085 - INFO - ++ git show -s --format=%ci f27d9447e09ad118c153f549a4aed4cad7d13c06
+2026-03-27 10:49:49,119 - INFO - + TAG_TIME='2017-05-15 00:14:00 +0900'
++ [[ 2017-05-15 00:14:00 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,119 - INFO - ++ git rev-list -n 1 v1.5a1
+2026-03-27 10:49:49,147 - INFO - + TAG_COMMIT=85db7c5e4d3e8b73035525cacc67620fe02634e9
+2026-03-27 10:49:49,148 - INFO - ++ git show -s --format=%ci 85db7c5e4d3e8b73035525cacc67620fe02634e9
+2026-03-27 10:49:49,180 - INFO - + TAG_TIME='2016-09-21 12:28:51 +0900'
++ [[ 2016-09-21 12:28:51 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,181 - INFO - ++ git rev-list -n 1 v1.5a2
+2026-03-27 10:49:49,208 - INFO - + TAG_COMMIT=65e37eefb3c21d4ae3cdbcd7ffe8221f7c2519f8
+2026-03-27 10:49:49,209 - INFO - ++ git show -s --format=%ci 65e37eefb3c21d4ae3cdbcd7ffe8221f7c2519f8
+2026-03-27 10:49:49,242 - INFO - + TAG_TIME='2016-10-17 21:31:22 +0900'
++ [[ 2016-10-17 21:31:22 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,243 - INFO - ++ git rev-list -n 1 v1.5b1
+2026-03-27 10:49:49,271 - INFO - + TAG_COMMIT=138edcdeb4e31e31a190a7e7a6253740f98fad1b
+2026-03-27 10:49:49,271 - INFO - ++ git show -s --format=%ci 138edcdeb4e31e31a190a7e7a6253740f98fad1b
+2026-03-27 10:49:49,304 - INFO - + TAG_TIME='2016-11-06 22:09:55 +0900'
++ [[ 2016-11-06 22:09:55 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:49,304 - INFO - + read tag
+2026-03-27 10:49:49,305 - INFO - ++ git rev-list -n 1 v1.6
+2026-03-27 10:49:49,332 - INFO - + TAG_COMMIT=0082bca133e8084f05af2995f264d450513eba9b
+2026-03-27 10:49:49,333 - INFO - ++ git show -s --format=%ci 0082bca133e8084f05af2995f264d450513eba9b
+2026-03-27 10:49:49,365 - INFO - + TAG_TIME='2017-05-16 22:35:06 +0900'
++ [[ 2017-05-16 22:35:06 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,366 - INFO - ++ git rev-list -n 1 v1.6.1
+2026-03-27 10:49:49,394 - INFO - + TAG_COMMIT=0082bca133e8084f05af2995f264d450513eba9b
+2026-03-27 10:49:49,395 - INFO - ++ git show -s --format=%ci 0082bca133e8084f05af2995f264d450513eba9b
+2026-03-27 10:49:49,429 - INFO - + TAG_TIME='2017-05-16 22:35:06 +0900'
++ [[ 2017-05-16 22:35:06 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:49,429 - INFO - + read tag
+2026-03-27 10:49:49,429 - INFO - ++ git rev-list -n 1 v1.6.2
+2026-03-27 10:49:49,459 - INFO - + TAG_COMMIT=7ffd6ccee8b0c6316159c4295e2f44f8c57b90d6
+2026-03-27 10:49:49,460 - INFO - ++ git show -s --format=%ci 7ffd6ccee8b0c6316159c4295e2f44f8c57b90d6
+2026-03-27 10:49:49,493 - INFO - + TAG_TIME='2017-05-29 00:29:25 +0900'
++ [[ 2017-05-29 00:29:25 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,493 - INFO - ++ git rev-list -n 1 v1.6.3
+2026-03-27 10:49:49,521 - INFO - + TAG_COMMIT=ddeccfc2c747942646b24fd52a0d09757cc9308b
+2026-03-27 10:49:49,521 - INFO - ++ git show -s --format=%ci ddeccfc2c747942646b24fd52a0d09757cc9308b
+2026-03-27 10:49:49,555 - INFO - + TAG_TIME='2017-07-02 20:15:05 +0900'
++ [[ 2017-07-02 20:15:05 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:49,555 - INFO - + read tag
+2026-03-27 10:49:49,555 - INFO - ++ git rev-list -n 1 v1.6.4
+2026-03-27 10:49:49,584 - INFO - + TAG_COMMIT=c6fe6a3bf23d3c61a9a05c9a2ab58ce17d594a62
+2026-03-27 10:49:49,584 - INFO - ++ git show -s --format=%ci c6fe6a3bf23d3c61a9a05c9a2ab58ce17d594a62
+2026-03-27 10:49:49,616 - INFO - + TAG_TIME='2017-09-26 09:45:14 +0900'
++ [[ 2017-09-26 09:45:14 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,617 - INFO - ++ git rev-list -n 1 v1.6.5
+2026-03-27 10:49:49,645 - INFO - + TAG_COMMIT=33fd46b2a5c994fd450da9b48e1d359eea34daf4
+2026-03-27 10:49:49,646 - INFO - ++ git show -s --format=%ci 33fd46b2a5c994fd450da9b48e1d359eea34daf4
+2026-03-27 10:49:49,679 - INFO - + TAG_TIME='2017-10-23 12:19:56 +0900'
++ [[ 2017-10-23 12:19:56 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,679 - INFO - ++ git rev-list -n 1 v1.6.6
+2026-03-27 10:49:49,708 - INFO - + TAG_COMMIT=739022730295c4968ecc212bbb80b03981eeced3
+2026-03-27 10:49:49,709 - INFO - ++ git show -s --format=%ci 739022730295c4968ecc212bbb80b03981eeced3
+2026-03-27 10:49:49,741 - INFO - + TAG_TIME='2018-01-08 21:38:18 +0900'
++ [[ 2018-01-08 21:38:18 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,742 - INFO - ++ git rev-list -n 1 v1.6.7
+2026-03-27 10:49:49,770 - INFO - + TAG_COMMIT=645044d7f03c7fcb4c39a8edf40aa66f6d6c2b64
+2026-03-27 10:49:49,771 - INFO - ++ git show -s --format=%ci 645044d7f03c7fcb4c39a8edf40aa66f6d6c2b64
+2026-03-27 10:49:49,804 - INFO - + TAG_TIME='2018-02-05 01:00:09 +0900'
++ [[ 2018-02-05 01:00:09 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,805 - INFO - ++ git rev-list -n 1 v1.6b1
+2026-03-27 10:49:49,833 - INFO - + TAG_COMMIT=3a60e1eaeabda65e12140f6952e2275f263d1dd7
+2026-03-27 10:49:49,833 - INFO - ++ git show -s --format=%ci 3a60e1eaeabda65e12140f6952e2275f263d1dd7
+2026-03-27 10:49:49,865 - INFO - + TAG_TIME='2017-04-24 00:41:02 +0900'
++ [[ 2017-04-24 00:41:02 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,866 - INFO - ++ git rev-list -n 1 v1.6b2
+2026-03-27 10:49:49,894 - INFO - + TAG_COMMIT=0f25c18ce90dd1019db63fe29a6f4878aff702c9
+2026-03-27 10:49:49,895 - INFO - ++ git show -s --format=%ci 0f25c18ce90dd1019db63fe29a6f4878aff702c9
+2026-03-27 10:49:49,928 - INFO - + TAG_TIME='2017-04-29 23:46:19 +0900'
++ [[ 2017-04-29 23:46:19 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,928 - INFO - ++ git rev-list -n 1 v1.6b3
+2026-03-27 10:49:49,956 - INFO - + TAG_COMMIT=5eb1a6afaeb3b42c66b7edf285a7652e82a13b07
+2026-03-27 10:49:49,957 - INFO - ++ git show -s --format=%ci 5eb1a6afaeb3b42c66b7edf285a7652e82a13b07
+2026-03-27 10:49:49,990 - INFO - + TAG_TIME='2017-05-07 18:11:57 +0900'
+2026-03-27 10:49:49,991 - INFO - + [[ 2017-05-07 18:11:57 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:49,991 - INFO - ++ git rev-list -n 1 v1.7.0
+2026-03-27 10:49:50,020 - INFO - + TAG_COMMIT=34a20bf10bd809e307f5040bff16babd6f1539bd
+2026-03-27 10:49:50,021 - INFO - ++ git show -s --format=%ci 34a20bf10bd809e307f5040bff16babd6f1539bd
+2026-03-27 10:49:50,053 - INFO - + TAG_TIME='2018-02-12 16:14:07 +0900'
++ [[ 2018-02-12 16:14:07 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,054 - INFO - ++ git rev-list -n 1 v1.7.0b1
+2026-03-27 10:49:50,082 - INFO - + TAG_COMMIT=bb34f0199a05f41f4f47d2536e82db29a1b78858
+2026-03-27 10:49:50,084 - INFO - ++ git show -s --format=%ci bb34f0199a05f41f4f47d2536e82db29a1b78858
+2026-03-27 10:49:50,115 - INFO - + TAG_TIME='2018-01-15 22:26:11 +0900'
++ [[ 2018-01-15 22:26:11 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,116 - INFO - ++ git rev-list -n 1 v1.7.0b2
+2026-03-27 10:49:50,143 - INFO - + TAG_COMMIT=7b0d658fe90b67cf68b77a26a449b4da583aef5a
+2026-03-27 10:49:50,144 - INFO - ++ git show -s --format=%ci 7b0d658fe90b67cf68b77a26a449b4da583aef5a
+2026-03-27 10:49:50,176 - INFO - + TAG_TIME='2018-01-31 22:35:29 +0900'
++ [[ 2018-01-31 22:35:29 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,177 - INFO - ++ git rev-list -n 1 v1.7.1
+2026-03-27 10:49:50,204 - INFO - + TAG_COMMIT=d4b6839295a9c45ec6d3622ddc6e6ede5c906fe6
+2026-03-27 10:49:50,205 - INFO - ++ git show -s --format=%ci d4b6839295a9c45ec6d3622ddc6e6ede5c906fe6
+2026-03-27 10:49:50,238 - INFO - + TAG_TIME='2018-02-23 23:39:34 +0900'
++ [[ 2018-02-23 23:39:34 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,239 - INFO - ++ git rev-list -n 1 v1.7.2
+2026-03-27 10:49:50,267 - INFO - + TAG_COMMIT=d029b3d5c94aeeadbdbf197356d2a4c6a0335b8d
+2026-03-27 10:49:50,267 - INFO - ++ git show -s --format=%ci d029b3d5c94aeeadbdbf197356d2a4c6a0335b8d
+2026-03-27 10:49:50,300 - INFO - + TAG_TIME='2018-03-21 21:03:54 +0900'
++ [[ 2018-03-21 21:03:54 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,301 - INFO - ++ git rev-list -n 1 v1.7.3
+2026-03-27 10:49:50,329 - INFO - + TAG_COMMIT=d5a108428dcb25b71980a02904b6b2ae0376f296
+2026-03-27 10:49:50,330 - INFO - ++ git show -s --format=%ci d5a108428dcb25b71980a02904b6b2ae0376f296
+2026-03-27 10:49:50,362 - INFO - + TAG_TIME='2018-04-23 01:23:45 +0900'
++ [[ 2018-04-23 01:23:45 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,364 - INFO - ++ git rev-list -n 1 v1.7.4
+2026-03-27 10:49:50,392 - INFO - + TAG_COMMIT=f7b3292d87e9a2b7eae0b4ef72e87779beefc699
+2026-03-27 10:49:50,393 - INFO - ++ git show -s --format=%ci f7b3292d87e9a2b7eae0b4ef72e87779beefc699
+2026-03-27 10:49:50,425 - INFO - + TAG_TIME='2018-04-26 00:54:38 +0900'
++ [[ 2018-04-26 00:54:38 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,426 - INFO - ++ git rev-list -n 1 v1.7.5
+2026-03-27 10:49:50,454 - INFO - + TAG_COMMIT=b371312887869c52e7be9033e60450a9dc12ca0c
+2026-03-27 10:49:50,456 - INFO - ++ git show -s --format=%ci b371312887869c52e7be9033e60450a9dc12ca0c
+2026-03-27 10:49:50,487 - INFO - + TAG_TIME='2018-05-29 01:46:45 +0900'
++ [[ 2018-05-29 01:46:45 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:50,487 - INFO - + read tag
+2026-03-27 10:49:50,488 - INFO - ++ git rev-list -n 1 v1.7.6
+2026-03-27 10:49:50,516 - INFO - + TAG_COMMIT=5c3a86d99e92373f876fccde2d17acf51463d79e
+2026-03-27 10:49:50,517 - INFO - ++ git show -s --format=%ci 5c3a86d99e92373f876fccde2d17acf51463d79e
+2026-03-27 10:49:50,548 - INFO - + TAG_TIME='2018-07-17 00:26:31 +0900'
++ [[ 2018-07-17 00:26:31 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,549 - INFO - ++ git rev-list -n 1 v1.7.7
+2026-03-27 10:49:50,577 - INFO - + TAG_COMMIT=f9027c6daf716a6524d55786069963365c0ada90
+2026-03-27 10:49:50,578 - INFO - ++ git show -s --format=%ci f9027c6daf716a6524d55786069963365c0ada90
+2026-03-27 10:49:50,611 - INFO - + TAG_TIME='2018-08-19 23:14:03 +0900'
++ [[ 2018-08-19 23:14:03 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,612 - INFO - ++ git rev-list -n 1 v1.7.8
+2026-03-27 10:49:50,640 - INFO - + TAG_COMMIT=887c09bf7e7deb35f715021b4abc1af338194abd
+2026-03-27 10:49:50,641 - INFO - ++ git show -s --format=%ci 887c09bf7e7deb35f715021b4abc1af338194abd
+2026-03-27 10:49:50,672 - INFO - + TAG_TIME='2018-08-29 01:01:17 +0900'
++ [[ 2018-08-29 01:01:17 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:50,673 - INFO - + read tag
+2026-03-27 10:49:50,673 - INFO - ++ git rev-list -n 1 v1.7.9
+2026-03-27 10:49:50,702 - INFO - + TAG_COMMIT=1cd87a11ef8df6b783d2e48d9668370a4e1640c9
+2026-03-27 10:49:50,703 - INFO - ++ git show -s --format=%ci 1cd87a11ef8df6b783d2e48d9668370a4e1640c9
+2026-03-27 10:49:50,736 - INFO - + TAG_TIME='2018-09-05 23:05:02 +0900'
++ [[ 2018-09-05 23:05:02 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,737 - INFO - ++ git rev-list -n 1 v1.8.0
+2026-03-27 10:49:50,765 - INFO - + TAG_COMMIT=16533cff9a1e20fc10ec78eaf7c4796cd3552965
+2026-03-27 10:49:50,766 - INFO - ++ git show -s --format=%ci 16533cff9a1e20fc10ec78eaf7c4796cd3552965
+2026-03-27 10:49:50,798 - INFO - + TAG_TIME='2018-09-13 00:48:58 +0900'
++ [[ 2018-09-13 00:48:58 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,798 - INFO - ++ git rev-list -n 1 v1.8.0b1
+2026-03-27 10:49:50,826 - INFO - + TAG_COMMIT=00e40cc32dc763877f683ac83d06f6ed96b5641b
+2026-03-27 10:49:50,827 - INFO - ++ git show -s --format=%ci 00e40cc32dc763877f683ac83d06f6ed96b5641b
+2026-03-27 10:49:50,859 - INFO - + TAG_TIME='2018-08-21 01:17:15 +0900'
++ [[ 2018-08-21 01:17:15 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,860 - INFO - ++ git rev-list -n 1 v1.8.1
+2026-03-27 10:49:50,888 - INFO - + TAG_COMMIT=65a560fd3ed9d4899edf229a0102be12c0bb0b86
+2026-03-27 10:49:50,889 - INFO - ++ git show -s --format=%ci 65a560fd3ed9d4899edf229a0102be12c0bb0b86
+2026-03-27 10:49:50,921 - INFO - + TAG_TIME='2018-09-22 17:32:40 +0900'
++ [[ 2018-09-22 17:32:40 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:50,921 - INFO - + read tag
+2026-03-27 10:49:50,921 - INFO - ++ git rev-list -n 1 v1.8.2
+2026-03-27 10:49:50,948 - INFO - + TAG_COMMIT=62a83e496093bb48bcabcc432f54005686dc06a1
+2026-03-27 10:49:50,948 - INFO - ++ git show -s --format=%ci 62a83e496093bb48bcabcc432f54005686dc06a1
+2026-03-27 10:49:50,981 - INFO - + TAG_TIME='2018-11-11 15:07:44 +0900'
++ [[ 2018-11-11 15:07:44 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:50,983 - INFO - ++ git rev-list -n 1 v1.8.3
+2026-03-27 10:49:51,010 - INFO - + TAG_COMMIT=81328ca59881e56a90375d60ce50a9de237dbafd
+2026-03-27 10:49:51,011 - INFO - ++ git show -s --format=%ci 81328ca59881e56a90375d60ce50a9de237dbafd
+2026-03-27 10:49:51,044 - INFO - + TAG_TIME='2018-12-26 00:29:31 +0900'
++ [[ 2018-12-26 00:29:31 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,045 - INFO - ++ git rev-list -n 1 v1.8.4
+2026-03-27 10:49:51,073 - INFO - + TAG_COMMIT=2f61ba876c40bf8c77d74faf372279c3510166bb
+2026-03-27 10:49:51,073 - INFO - ++ git show -s --format=%ci 2f61ba876c40bf8c77d74faf372279c3510166bb
+2026-03-27 10:49:51,108 - INFO - + TAG_TIME='2019-02-03 23:15:10 +0900'
++ [[ 2019-02-03 23:15:10 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,110 - INFO - ++ git rev-list -n 1 v1.8.5
+2026-03-27 10:49:51,139 - INFO - + TAG_COMMIT=591bdd74c0739269a9b2651aec2fa2554a3d8d23
+2026-03-27 10:49:51,140 - INFO - ++ git show -s --format=%ci 591bdd74c0739269a9b2651aec2fa2554a3d8d23
+2026-03-27 10:49:51,172 - INFO - + TAG_TIME='2019-03-10 16:48:42 +0900'
++ [[ 2019-03-10 16:48:42 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,174 - INFO - ++ git rev-list -n 1 v1.8.6
+2026-03-27 10:49:51,201 - INFO - + TAG_COMMIT=303a37735e564a3f0bdba15d72727445e0f7cf5f
+2026-03-27 10:49:51,202 - INFO - ++ git show -s --format=%ci 303a37735e564a3f0bdba15d72727445e0f7cf5f
+2026-03-27 10:49:51,233 - INFO - + TAG_TIME='2021-11-18 00:39:54 +0900'
++ [[ 2021-11-18 00:39:54 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v1.8.6
+2026-03-27 10:49:51,260 - INFO - Deleted tag 'v1.8.6' (was 303a37735)
+2026-03-27 10:49:51,260 - INFO - + read tag
+2026-03-27 10:49:51,261 - INFO - ++ git rev-list -n 1 v2.0.0
+2026-03-27 10:49:51,288 - INFO - + TAG_COMMIT=3711c47985b8a8cbbdaf4a2674fb33e88ada97a3
+2026-03-27 10:49:51,289 - INFO - ++ git show -s --format=%ci 3711c47985b8a8cbbdaf4a2674fb33e88ada97a3
+2026-03-27 10:49:51,322 - INFO - + TAG_TIME='2019-03-29 00:19:17 +0900'
++ [[ 2019-03-29 00:19:17 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,323 - INFO - ++ git rev-list -n 1 v2.0.0b1
+2026-03-27 10:49:51,350 - INFO - + TAG_COMMIT=60a1016aa44e723a5b5cb9be60f53d617be7e2e2
+2026-03-27 10:49:51,351 - INFO - ++ git show -s --format=%ci 60a1016aa44e723a5b5cb9be60f53d617be7e2e2
+2026-03-27 10:49:51,383 - INFO - + TAG_TIME='2019-02-18 01:53:35 +0900'
++ [[ 2019-02-18 01:53:35 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,384 - INFO - ++ git rev-list -n 1 v2.0.0b2
+2026-03-27 10:49:51,412 - INFO - + TAG_COMMIT=987cf555d8d7fb08a9d59d6a1d26ac575a788bb5
+2026-03-27 10:49:51,413 - INFO - ++ git show -s --format=%ci 987cf555d8d7fb08a9d59d6a1d26ac575a788bb5
+2026-03-27 10:49:51,446 - INFO - + TAG_TIME='2019-03-21 02:18:06 +0900'
++ [[ 2019-03-21 02:18:06 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,447 - INFO - ++ git rev-list -n 1 v2.0.1
+2026-03-27 10:49:51,476 - INFO - + TAG_COMMIT=e2e4c48e20a5054585497f86cd360f889ef11206
+2026-03-27 10:49:51,477 - INFO - ++ git show -s --format=%ci e2e4c48e20a5054585497f86cd360f889ef11206
+2026-03-27 10:49:51,510 - INFO - + TAG_TIME='2019-04-09 00:12:06 +0900'
++ [[ 2019-04-09 00:12:06 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,511 - INFO - ++ git rev-list -n 1 v2.1.0
+2026-03-27 10:49:51,539 - INFO - + TAG_COMMIT=653b0e00004c084aa154c72104d6451bdc7a6c42
+2026-03-27 10:49:51,539 - INFO - ++ git show -s --format=%ci 653b0e00004c084aa154c72104d6451bdc7a6c42
+2026-03-27 10:49:51,571 - INFO - + TAG_TIME='2019-06-02 21:10:40 +0900'
+2026-03-27 10:49:51,572 - INFO - + [[ 2019-06-02 21:10:40 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,572 - INFO - ++ git rev-list -n 1 v2.1.1
+2026-03-27 10:49:51,601 - INFO - + TAG_COMMIT=afa4a772da3cb5218360b9e54490f49acab3bdbe
+2026-03-27 10:49:51,602 - INFO - ++ git show -s --format=%ci afa4a772da3cb5218360b9e54490f49acab3bdbe
+2026-03-27 10:49:51,635 - INFO - + TAG_TIME='2019-06-10 22:34:45 +0900'
+2026-03-27 10:49:51,635 - INFO - + [[ 2019-06-10 22:34:45 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,637 - INFO - ++ git rev-list -n 1 v2.1.2
+2026-03-27 10:49:51,665 - INFO - + TAG_COMMIT=39563d1b294ef5cce7102ad82177e99f646ba042
+2026-03-27 10:49:51,666 - INFO - ++ git show -s --format=%ci 39563d1b294ef5cce7102ad82177e99f646ba042
+2026-03-27 10:49:51,696 - INFO - + TAG_TIME='2019-06-19 20:31:54 +0900'
++ [[ 2019-06-19 20:31:54 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:51,696 - INFO - + read tag
+2026-03-27 10:49:51,697 - INFO - ++ git rev-list -n 1 v2.2.0
+2026-03-27 10:49:51,725 - INFO - + TAG_COMMIT=bea7b5d4777d6b1216213b6c58eee0c3d133ca94
+2026-03-27 10:49:51,726 - INFO - ++ git show -s --format=%ci bea7b5d4777d6b1216213b6c58eee0c3d133ca94
+2026-03-27 10:49:51,759 - INFO - + TAG_TIME='2019-08-19 00:33:00 +0900'
++ [[ 2019-08-19 00:33:00 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,759 - INFO - ++ git rev-list -n 1 v2.2.1
+2026-03-27 10:49:51,786 - INFO - + TAG_COMMIT=f5f79684b08cbdc8107684e7b81e674ab9b2f9af
+2026-03-27 10:49:51,786 - INFO - ++ git show -s --format=%ci f5f79684b08cbdc8107684e7b81e674ab9b2f9af
+2026-03-27 10:49:51,819 - INFO - + TAG_TIME='2019-10-26 18:00:31 +0900'
++ [[ 2019-10-26 18:00:31 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,820 - INFO - ++ git rev-list -n 1 v2.2.2
+2026-03-27 10:49:51,847 - INFO - + TAG_COMMIT=c7d5393fff4bd3023a05d44799339d8904d7e8a1
+2026-03-27 10:49:51,848 - INFO - ++ git show -s --format=%ci c7d5393fff4bd3023a05d44799339d8904d7e8a1
+2026-03-27 10:49:51,881 - INFO - + TAG_TIME='2019-12-03 01:14:13 +0900'
++ [[ 2019-12-03 01:14:13 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,882 - INFO - ++ git rev-list -n 1 v2.3.0
+2026-03-27 10:49:51,912 - INFO - + TAG_COMMIT=86143a54b86049dc8d725ee1418e9523c41a7b77
+2026-03-27 10:49:51,913 - INFO - ++ git show -s --format=%ci 86143a54b86049dc8d725ee1418e9523c41a7b77
+2026-03-27 10:49:51,946 - INFO - + TAG_TIME='2019-12-16 00:01:29 +0900'
++ [[ 2019-12-16 00:01:29 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:51,947 - INFO - ++ git rev-list -n 1 v2.3.1
+2026-03-27 10:49:51,975 - INFO - + TAG_COMMIT=131081de5afaedc13206c36bed1f65ff4b7dbfd6
+2026-03-27 10:49:51,976 - INFO - ++ git show -s --format=%ci 131081de5afaedc13206c36bed1f65ff4b7dbfd6
+2026-03-27 10:49:52,007 - INFO - + TAG_TIME='2019-12-22 22:55:35 +0900'
++ [[ 2019-12-22 22:55:35 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,008 - INFO - ++ git rev-list -n 1 v2.4.0
+2026-03-27 10:49:52,034 - INFO - + TAG_COMMIT=a72135c4548fa00352ad3bd844ed285f3ccf771e
+2026-03-27 10:49:52,035 - INFO - ++ git show -s --format=%ci a72135c4548fa00352ad3bd844ed285f3ccf771e
+2026-03-27 10:49:52,067 - INFO - + TAG_TIME='2020-02-09 16:17:10 +0900'
++ [[ 2020-02-09 16:17:10 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,067 - INFO - ++ git rev-list -n 1 v2.4.1
+2026-03-27 10:49:52,094 - INFO - + TAG_COMMIT=5b47df9ebf67f00e69860f08f82ba57f2ef6a57c
+2026-03-27 10:49:52,095 - INFO - ++ git show -s --format=%ci 5b47df9ebf67f00e69860f08f82ba57f2ef6a57c
+2026-03-27 10:49:52,127 - INFO - + TAG_TIME='2020-02-11 23:09:36 +0900'
++ [[ 2020-02-11 23:09:36 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,128 - INFO - ++ git rev-list -n 1 v2.4.2
+2026-03-27 10:49:52,154 - INFO - + TAG_COMMIT=47a9845af25866c2b165a66aff9bb57de784027e
+2026-03-27 10:49:52,155 - INFO - ++ git show -s --format=%ci 47a9845af25866c2b165a66aff9bb57de784027e
+2026-03-27 10:49:52,186 - INFO - + TAG_TIME='2020-02-19 01:24:48 +0900'
++ [[ 2020-02-19 01:24:48 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,186 - INFO - ++ git rev-list -n 1 v2.4.3
+2026-03-27 10:49:52,213 - INFO - + TAG_COMMIT=87fd65fd313a97e35deb717ca861d269f741afbf
+2026-03-27 10:49:52,214 - INFO - ++ git show -s --format=%ci 87fd65fd313a97e35deb717ca861d269f741afbf
+2026-03-27 10:49:52,245 - INFO - + TAG_TIME='2020-02-22 23:17:23 +0900'
++ [[ 2020-02-22 23:17:23 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,246 - INFO - ++ git rev-list -n 1 v2.4.4
+2026-03-27 10:49:52,273 - INFO - + TAG_COMMIT=72ad5f2a98c60d2b1cd856b6b9057ac5b5c85edd
+2026-03-27 10:49:52,273 - INFO - ++ git show -s --format=%ci 72ad5f2a98c60d2b1cd856b6b9057ac5b5c85edd
+2026-03-27 10:49:52,304 - INFO - + TAG_TIME='2020-03-05 23:02:46 +0900'
++ [[ 2020-03-05 23:02:46 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,305 - INFO - ++ git rev-list -n 1 v2.4.5
+2026-03-27 10:49:52,331 - INFO - + TAG_COMMIT=5eb5d073e8418d1b2e43b4ad39d5fbe02603eae4
+2026-03-27 10:49:52,332 - INFO - ++ git show -s --format=%ci 5eb5d073e8418d1b2e43b4ad39d5fbe02603eae4
+2026-03-27 10:49:52,363 - INFO - + TAG_TIME='2021-11-18 00:45:40 +0900'
++ [[ 2021-11-18 00:45:40 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v2.4.5
+2026-03-27 10:49:52,386 - INFO - Deleted tag 'v2.4.5' (was 5eb5d073e)
+2026-03-27 10:49:52,386 - INFO - + read tag
+2026-03-27 10:49:52,386 - INFO - ++ git rev-list -n 1 v3.0.0
+2026-03-27 10:49:52,413 - INFO - + TAG_COMMIT=8178597970186365de88a44bb18c83f978b5ba05
+2026-03-27 10:49:52,414 - INFO - ++ git show -s --format=%ci 8178597970186365de88a44bb18c83f978b5ba05
+2026-03-27 10:49:52,445 - INFO - + TAG_TIME='2020-04-06 00:11:34 +0900'
++ [[ 2020-04-06 00:11:34 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,446 - INFO - ++ git rev-list -n 1 v3.0.0b1
+2026-03-27 10:49:52,473 - INFO - + TAG_COMMIT=f8e0a0e23a152e8875185809b414590baf6eb93c
+2026-03-27 10:49:52,474 - INFO - ++ git show -s --format=%ci f8e0a0e23a152e8875185809b414590baf6eb93c
+2026-03-27 10:49:52,507 - INFO - + TAG_TIME='2020-03-23 00:04:42 +0900'
++ [[ 2020-03-23 00:04:42 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,507 - INFO - ++ git rev-list -n 1 v3.0.1
+2026-03-27 10:49:52,535 - INFO - + TAG_COMMIT=474f9d49e62ac6d07b5be0371a6d1f69172a0291
+2026-03-27 10:49:52,536 - INFO - ++ git show -s --format=%ci 474f9d49e62ac6d07b5be0371a6d1f69172a0291
+2026-03-27 10:49:52,568 - INFO - + TAG_TIME='2020-04-11 00:02:10 +0900'
++ [[ 2020-04-11 00:02:10 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,569 - INFO - ++ git rev-list -n 1 v3.0.2
+2026-03-27 10:49:52,596 - INFO - + TAG_COMMIT=2458dd3f8cbc663cfd0b2167a506349c84b0f8ee
+2026-03-27 10:49:52,597 - INFO - ++ git show -s --format=%ci 2458dd3f8cbc663cfd0b2167a506349c84b0f8ee
+2026-03-27 10:49:52,629 - INFO - + TAG_TIME='2020-04-19 23:41:11 +0900'
++ [[ 2020-04-19 23:41:11 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,630 - INFO - ++ git rev-list -n 1 v3.0.3
+2026-03-27 10:49:52,657 - INFO - + TAG_COMMIT=241be808218786ee7b684f36ea0b07846780ce50
+2026-03-27 10:49:52,658 - INFO - ++ git show -s --format=%ci 241be808218786ee7b684f36ea0b07846780ce50
+2026-03-27 10:49:52,690 - INFO - + TAG_TIME='2020-04-26 22:55:46 +0900'
++ [[ 2020-04-26 22:55:46 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,690 - INFO - ++ git rev-list -n 1 v3.0.4
+2026-03-27 10:49:52,718 - INFO - + TAG_COMMIT=b797f7f75c1611182997b2171882acb11b63c776
+2026-03-27 10:49:52,719 - INFO - ++ git show -s --format=%ci b797f7f75c1611182997b2171882acb11b63c776
+2026-03-27 10:49:52,751 - INFO - + TAG_TIME='2020-05-27 00:34:47 +0900'
++ [[ 2020-05-27 00:34:47 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,752 - INFO - ++ git rev-list -n 1 v3.1.0
+2026-03-27 10:49:52,779 - INFO - + TAG_COMMIT=62a9b324a2230d0c8dbfde579abd7ce4ec42d4fb
+2026-03-27 10:49:52,780 - INFO - ++ git show -s --format=%ci 62a9b324a2230d0c8dbfde579abd7ce4ec42d4fb
+2026-03-27 10:49:52,812 - INFO - + TAG_TIME='2020-06-08 22:37:01 +0900'
++ [[ 2020-06-08 22:37:01 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,813 - INFO - ++ git rev-list -n 1 v3.1.1
+2026-03-27 10:49:52,840 - INFO - + TAG_COMMIT=e7c2949a872c0654428c6bd1bea29659a65c684e
+2026-03-27 10:49:52,841 - INFO - ++ git show -s --format=%ci e7c2949a872c0654428c6bd1bea29659a65c684e
+2026-03-27 10:49:52,873 - INFO - + TAG_TIME='2020-06-14 12:53:48 +0900'
++ [[ 2020-06-14 12:53:48 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,874 - INFO - ++ git rev-list -n 1 v3.1.2
+2026-03-27 10:49:52,901 - INFO - + TAG_COMMIT=1cb5fa2f6a02ac4425e3db40c8c40bba7d831a9e
+2026-03-27 10:49:52,902 - INFO - ++ git show -s --format=%ci 1cb5fa2f6a02ac4425e3db40c8c40bba7d831a9e
+2026-03-27 10:49:52,933 - INFO - + TAG_TIME='2020-07-05 19:43:41 +0900'
++ [[ 2020-07-05 19:43:41 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,934 - INFO - ++ git rev-list -n 1 v3.2.0
+2026-03-27 10:49:52,961 - INFO - + TAG_COMMIT=e91f8a7d05d43c9e3dc68f48ef4065aaa495df2c
+2026-03-27 10:49:52,962 - INFO - ++ git show -s --format=%ci e91f8a7d05d43c9e3dc68f48ef4065aaa495df2c
+2026-03-27 10:49:52,994 - INFO - + TAG_TIME='2020-08-08 18:09:52 +0900'
++ [[ 2020-08-08 18:09:52 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:52,994 - INFO - ++ git rev-list -n 1 v3.2.1
+2026-03-27 10:49:53,023 - INFO - + TAG_COMMIT=359794281065646a81f2fb3d3a7086681c61e12d
+2026-03-27 10:49:53,024 - INFO - ++ git show -s --format=%ci 359794281065646a81f2fb3d3a7086681c61e12d
+2026-03-27 10:49:53,056 - INFO - + TAG_TIME='2020-08-14 19:53:48 +0900'
++ [[ 2020-08-14 19:53:48 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ read tag
+2026-03-27 10:49:53,057 - INFO - ++ git rev-list -n 1 v3.3.0
+2026-03-27 10:49:53,083 - INFO - + TAG_COMMIT=24848f5a6ae160975ab7969640264b630a3a7ab0
+2026-03-27 10:49:53,084 - INFO - ++ git show -s --format=%ci 24848f5a6ae160975ab7969640264b630a3a7ab0
+2026-03-27 10:49:53,115 - INFO - + TAG_TIME='2020-11-02 22:18:45 +0900'
++ [[ 2020-11-02 22:18:45 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.3.0
+2026-03-27 10:49:53,139 - INFO - Deleted tag 'v3.3.0' (was 24848f5a6)
+2026-03-27 10:49:53,139 - INFO - + read tag
+2026-03-27 10:49:53,140 - INFO - ++ git rev-list -n 1 v3.3.1
+2026-03-27 10:49:53,166 - INFO - + TAG_COMMIT=c09795c19421a01aa03e465aaf26834941d5b245
+2026-03-27 10:49:53,167 - INFO - ++ git show -s --format=%ci c09795c19421a01aa03e465aaf26834941d5b245
+2026-03-27 10:49:53,198 - INFO - + TAG_TIME='2020-11-12 23:21:14 +0900'
++ [[ 2020-11-12 23:21:14 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.3.1
+2026-03-27 10:49:53,221 - INFO - Deleted tag 'v3.3.1' (was c09795c19)
+2026-03-27 10:49:53,221 - INFO - + read tag
+2026-03-27 10:49:53,222 - INFO - ++ git rev-list -n 1 v3.4.0
+2026-03-27 10:49:53,248 - INFO - + TAG_COMMIT=79ff24815442211286754b2457fbb13c1b7810e4
+2026-03-27 10:49:53,249 - INFO - ++ git show -s --format=%ci 79ff24815442211286754b2457fbb13c1b7810e4
+2026-03-27 10:49:53,281 - INFO - + TAG_TIME='2020-12-20 18:55:08 +0900'
++ [[ 2020-12-20 18:55:08 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.4.0
+2026-03-27 10:49:53,305 - INFO - Deleted tag 'v3.4.0' (was 79ff24815)
+2026-03-27 10:49:53,305 - INFO - + read tag
+2026-03-27 10:49:53,306 - INFO - ++ git rev-list -n 1 v3.4.1
+2026-03-27 10:49:53,333 - INFO - + TAG_COMMIT=f5406b918791d9504ca6638330d89dbd86ebcb93
+2026-03-27 10:49:53,334 - INFO - ++ git show -s --format=%ci f5406b918791d9504ca6638330d89dbd86ebcb93
+2026-03-27 10:49:53,366 - INFO - + TAG_TIME='2020-12-25 00:04:05 +0900'
++ [[ 2020-12-25 00:04:05 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.4.1
+2026-03-27 10:49:53,389 - INFO - Deleted tag 'v3.4.1' (was f5406b918)
+2026-03-27 10:49:53,389 - INFO - + read tag
+2026-03-27 10:49:53,390 - INFO - ++ git rev-list -n 1 v3.4.2
+2026-03-27 10:49:53,418 - INFO - + TAG_COMMIT=83d5a323ef113294bb1c6e93f7752451668ed886
+2026-03-27 10:49:53,418 - INFO - ++ git show -s --format=%ci 83d5a323ef113294bb1c6e93f7752451668ed886
+2026-03-27 10:49:53,450 - INFO - + TAG_TIME='2021-01-04 21:42:37 +0900'
++ [[ 2021-01-04 21:42:37 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.4.2
+2026-03-27 10:49:53,476 - INFO - Deleted tag 'v3.4.2' (was 83d5a323e)
+2026-03-27 10:49:53,476 - INFO - + read tag
+2026-03-27 10:49:53,477 - INFO - ++ git rev-list -n 1 v3.4.3
+2026-03-27 10:49:53,505 - INFO - + TAG_COMMIT=55cdadf973b89b3181407c478075ac0fc6984b3d
+2026-03-27 10:49:53,506 - INFO - ++ git show -s --format=%ci 55cdadf973b89b3181407c478075ac0fc6984b3d
+2026-03-27 10:49:53,538 - INFO - + TAG_TIME='2021-01-08 01:16:15 +0900'
++ [[ 2021-01-08 01:16:15 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.4.3
+2026-03-27 10:49:53,561 - INFO - Deleted tag 'v3.4.3' (was 55cdadf97)
+2026-03-27 10:49:53,561 - INFO - + read tag
+2026-03-27 10:49:53,562 - INFO - ++ git rev-list -n 1 v3.5.0
+2026-03-27 10:49:53,589 - INFO - + TAG_COMMIT=32dad69a4f7dda824f8d74dd51880d0bcb5a5c88
+2026-03-27 10:49:53,590 - INFO - ++ git show -s --format=%ci 32dad69a4f7dda824f8d74dd51880d0bcb5a5c88
+2026-03-27 10:49:53,621 - INFO - + TAG_TIME='2021-02-14 16:48:00 +0900'
++ [[ 2021-02-14 16:48:00 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.5.0
+2026-03-27 10:49:53,645 - INFO - Deleted tag 'v3.5.0' (was 32dad69a4)
+2026-03-27 10:49:53,645 - INFO - + read tag
+2026-03-27 10:49:53,646 - INFO - ++ git rev-list -n 1 v3.5.1
+2026-03-27 10:49:53,673 - INFO - + TAG_COMMIT=baed519b90ca0ff77748b0445dc6aec598197c80
+2026-03-27 10:49:53,674 - INFO - ++ git show -s --format=%ci baed519b90ca0ff77748b0445dc6aec598197c80
+2026-03-27 10:49:53,706 - INFO - + TAG_TIME='2021-02-16 23:35:32 +0900'
++ [[ 2021-02-16 23:35:32 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.5.1
+2026-03-27 10:49:53,729 - INFO - Deleted tag 'v3.5.1' (was baed519b9)
+2026-03-27 10:49:53,729 - INFO - + read tag
+2026-03-27 10:49:53,730 - INFO - ++ git rev-list -n 1 v3.5.2
+2026-03-27 10:49:53,757 - INFO - + TAG_COMMIT=a969e90f28e0ade11b4c38d9a6e6f3264d1bf971
+2026-03-27 10:49:53,758 - INFO - ++ git show -s --format=%ci a969e90f28e0ade11b4c38d9a6e6f3264d1bf971
+2026-03-27 10:49:53,790 - INFO - + TAG_TIME='2021-03-06 20:59:53 +0900'
++ [[ 2021-03-06 20:59:53 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.5.2
+2026-03-27 10:49:53,813 - INFO - Deleted tag 'v3.5.2' (was a969e90f2)
+2026-03-27 10:49:53,813 - INFO - + read tag
+2026-03-27 10:49:53,814 - INFO - ++ git rev-list -n 1 v3.5.4
+2026-03-27 10:49:53,841 - INFO - + TAG_COMMIT=f6a839ff0fed5fa32428f9a6909023ee299067ac
+2026-03-27 10:49:53,842 - INFO - ++ git show -s --format=%ci f6a839ff0fed5fa32428f9a6909023ee299067ac
+2026-03-27 10:49:53,874 - INFO - + TAG_TIME='2021-04-11 20:27:10 +0900'
++ [[ 2021-04-11 20:27:10 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v3.5.4
+2026-03-27 10:49:53,900 - INFO - Deleted tag 'v3.5.4' (was f6a839ff0)
+2026-03-27 10:49:53,900 - INFO - + read tag
+2026-03-27 10:49:53,901 - INFO - ++ git rev-list -n 1 v4.0.0
+2026-03-27 10:49:53,927 - INFO - + TAG_COMMIT=a317d0037c3513e902c4259331e2c6249540fcda
+2026-03-27 10:49:53,927 - INFO - ++ git show -s --format=%ci a317d0037c3513e902c4259331e2c6249540fcda
+2026-03-27 10:49:53,958 - INFO - + TAG_TIME='2021-05-09 12:20:11 +0900'
++ [[ 2021-05-09 12:20:11 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.0.0
+2026-03-27 10:49:53,981 - INFO - Deleted tag 'v4.0.0' (was a317d0037)
+2026-03-27 10:49:53,981 - INFO - + read tag
+2026-03-27 10:49:53,982 - INFO - ++ git rev-list -n 1 v4.0.0b1
+2026-03-27 10:49:54,008 - INFO - + TAG_COMMIT=4a328f41a518c098ad80140f4a9e83c0b731ad02
+2026-03-27 10:49:54,009 - INFO - ++ git show -s --format=%ci 4a328f41a518c098ad80140f4a9e83c0b731ad02
+2026-03-27 10:49:54,040 - INFO - + TAG_TIME='2021-04-12 00:29:49 +0900'
++ [[ 2021-04-12 00:29:49 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.0.0b1
+2026-03-27 10:49:54,062 - INFO - Deleted tag 'v4.0.0b1' (was 4a328f41a)
+2026-03-27 10:49:54,063 - INFO - + read tag
+2026-03-27 10:49:54,063 - INFO - ++ git rev-list -n 1 v4.0.0b2
+2026-03-27 10:49:54,090 - INFO - + TAG_COMMIT=07e84752c74c15297464c4db744137594894609f
+2026-03-27 10:49:54,090 - INFO - ++ git show -s --format=%ci 07e84752c74c15297464c4db744137594894609f
+2026-03-27 10:49:54,121 - INFO - + TAG_TIME='2021-04-29 15:03:44 +0900'
++ [[ 2021-04-29 15:03:44 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.0.0b2
+2026-03-27 10:49:54,147 - INFO - Deleted tag 'v4.0.0b2' (was 07e84752c)
+2026-03-27 10:49:54,147 - INFO - + read tag
+2026-03-27 10:49:54,148 - INFO - ++ git rev-list -n 1 v4.0.1
+2026-03-27 10:49:54,175 - INFO - + TAG_COMMIT=bdce720bb9f69d1c39ed14d214e15db4df341805
+2026-03-27 10:49:54,176 - INFO - ++ git show -s --format=%ci bdce720bb9f69d1c39ed14d214e15db4df341805
+2026-03-27 10:49:54,207 - INFO - + TAG_TIME='2021-05-11 02:33:12 +0900'
++ [[ 2021-05-11 02:33:12 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:54,207 - INFO - + git tag -d v4.0.1
+2026-03-27 10:49:54,230 - INFO - Deleted tag 'v4.0.1' (was bdce720bb)
+2026-03-27 10:49:54,230 - INFO - + read tag
+2026-03-27 10:49:54,231 - INFO - ++ git rev-list -n 1 v4.0.2
+2026-03-27 10:49:54,258 - INFO - + TAG_COMMIT=a55816deb546828db1383f2875be815bf805f858
+2026-03-27 10:49:54,259 - INFO - ++ git show -s --format=%ci a55816deb546828db1383f2875be815bf805f858
+2026-03-27 10:49:54,290 - INFO - + TAG_TIME='2021-05-20 21:57:27 +0900'
++ [[ 2021-05-20 21:57:27 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.0.2
+2026-03-27 10:49:54,312 - INFO - Deleted tag 'v4.0.2' (was a55816deb)
+2026-03-27 10:49:54,312 - INFO - + read tag
+2026-03-27 10:49:54,313 - INFO - ++ git rev-list -n 1 v4.0.3
+2026-03-27 10:49:54,339 - INFO - + TAG_COMMIT=007795da0171f4d77df97027401a5e285111fad0
+2026-03-27 10:49:54,340 - INFO - ++ git show -s --format=%ci 007795da0171f4d77df97027401a5e285111fad0
+2026-03-27 10:49:54,371 - INFO - + TAG_TIME='2021-07-06 00:40:29 +0900'
++ [[ 2021-07-06 00:40:29 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.0.3
+2026-03-27 10:49:54,396 - INFO - Deleted tag 'v4.0.3' (was 007795da0)
+2026-03-27 10:49:54,396 - INFO - + read tag
+2026-03-27 10:49:54,397 - INFO - ++ git rev-list -n 1 v4.1.0
+2026-03-27 10:49:54,423 - INFO - + TAG_COMMIT=bdcd16113be28ae69557ed712381363224fae9f1
+2026-03-27 10:49:54,424 - INFO - ++ git show -s --format=%ci bdcd16113be28ae69557ed712381363224fae9f1
+2026-03-27 10:49:54,455 - INFO - + TAG_TIME='2021-07-12 02:12:31 +0900'
++ [[ 2021-07-12 02:12:31 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.1.0
+2026-03-27 10:49:54,477 - INFO - Deleted tag 'v4.1.0' (was bdcd16113)
+2026-03-27 10:49:54,477 - INFO - + read tag
+2026-03-27 10:49:54,478 - INFO - ++ git rev-list -n 1 v4.1.1
+2026-03-27 10:49:54,506 - INFO - + TAG_COMMIT=564439e66d81693edd08fa5973a14151af976ca8
+2026-03-27 10:49:54,506 - INFO - ++ git show -s --format=%ci 564439e66d81693edd08fa5973a14151af976ca8
+2026-03-27 10:49:54,537 - INFO - + TAG_TIME='2021-07-15 02:22:15 +0900'
++ [[ 2021-07-15 02:22:15 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.1.1
+2026-03-27 10:49:54,559 - INFO - Deleted tag 'v4.1.1' (was 564439e66)
+2026-03-27 10:49:54,559 - INFO - + read tag
+2026-03-27 10:49:54,560 - INFO - ++ git rev-list -n 1 v4.1.2
+2026-03-27 10:49:54,590 - INFO - + TAG_COMMIT=4ba5c21b0182557157710a457bed470d335f7571
+2026-03-27 10:49:54,590 - INFO - ++ git show -s --format=%ci 4ba5c21b0182557157710a457bed470d335f7571
+2026-03-27 10:49:54,622 - INFO - + TAG_TIME='2021-07-27 02:13:32 +0900'
++ [[ 2021-07-27 02:13:32 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.1.2
+2026-03-27 10:49:54,646 - INFO - Deleted tag 'v4.1.2' (was 4ba5c21b0)
+2026-03-27 10:49:54,646 - INFO - + read tag
+2026-03-27 10:49:54,647 - INFO - ++ git rev-list -n 1 v4.2.0
+2026-03-27 10:49:54,675 - INFO - + TAG_COMMIT=21db4b140731a20930f50b8bfd15aa4e0d07944f
+2026-03-27 10:49:54,676 - INFO - ++ git show -s --format=%ci 21db4b140731a20930f50b8bfd15aa4e0d07944f
+2026-03-27 10:49:54,708 - INFO - + TAG_TIME='2021-09-12 16:51:24 +0900'
++ [[ 2021-09-12 16:51:24 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.2.0
+2026-03-27 10:49:54,731 - INFO - Deleted tag 'v4.2.0' (was 21db4b140)
+2026-03-27 10:49:54,731 - INFO - + read tag
+2026-03-27 10:49:54,732 - INFO - ++ git rev-list -n 1 v4.3.0
+2026-03-27 10:49:54,758 - INFO - + TAG_COMMIT=3001cc9f8d35a3520bb017c345c29faec66d4848
+2026-03-27 10:49:54,759 - INFO - ++ git show -s --format=%ci 3001cc9f8d35a3520bb017c345c29faec66d4848
+2026-03-27 10:49:54,791 - INFO - + TAG_TIME='2021-11-11 02:22:40 +0900'
+2026-03-27 10:49:54,791 - INFO - + [[ 2021-11-11 02:22:40 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.3.0
+2026-03-27 10:49:54,814 - INFO - Deleted tag 'v4.3.0' (was 3001cc9f8)
+2026-03-27 10:49:54,814 - INFO - + read tag
+2026-03-27 10:49:54,815 - INFO - ++ git rev-list -n 1 v4.3.1
+2026-03-27 10:49:54,841 - INFO - + TAG_COMMIT=ad3f23e256a3c203721250343b7055b830e74247
+2026-03-27 10:49:54,842 - INFO - ++ git show -s --format=%ci ad3f23e256a3c203721250343b7055b830e74247
+2026-03-27 10:49:54,872 - INFO - + TAG_TIME='2021-11-28 01:04:37 +0900'
+2026-03-27 10:49:54,872 - INFO - + [[ 2021-11-28 01:04:37 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.3.1
+2026-03-27 10:49:54,895 - INFO - Deleted tag 'v4.3.1' (was ad3f23e25)
+2026-03-27 10:49:54,895 - INFO - + read tag
+2026-03-27 10:49:54,896 - INFO - ++ git rev-list -n 1 v4.3.2
+2026-03-27 10:49:54,923 - INFO - + TAG_COMMIT=5cf55d1c901ca49481d7bf4021190b1ff737956d
+2026-03-27 10:49:54,924 - INFO - ++ git show -s --format=%ci 5cf55d1c901ca49481d7bf4021190b1ff737956d
+2026-03-27 10:49:54,957 - INFO - + TAG_TIME='2021-12-19 17:38:16 +0900'
++ [[ 2021-12-19 17:38:16 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.3.2
+2026-03-27 10:49:54,982 - INFO - Deleted tag 'v4.3.2' (was 5cf55d1c9)
+2026-03-27 10:49:54,982 - INFO - + read tag
+2026-03-27 10:49:54,983 - INFO - ++ git rev-list -n 1 v4.4.0
+2026-03-27 10:49:55,009 - INFO - + TAG_COMMIT=88f9647a223c77a29153683b49bc29852ed80721
+2026-03-27 10:49:55,010 - INFO - ++ git show -s --format=%ci 88f9647a223c77a29153683b49bc29852ed80721
+2026-03-27 10:49:55,041 - INFO - + TAG_TIME='2022-01-17 00:17:38 +0900'
+2026-03-27 10:49:55,041 - INFO - + [[ 2022-01-17 00:17:38 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.4.0
+2026-03-27 10:49:55,065 - INFO - Deleted tag 'v4.4.0' (was 88f9647a2)
+2026-03-27 10:49:55,065 - INFO - + read tag
+2026-03-27 10:49:55,066 - INFO - ++ git rev-list -n 1 v4.5.0
+2026-03-27 10:49:55,093 - INFO - + TAG_COMMIT=2329fdef8c20c6c75194f5d842b8f62ebad5c79d
+2026-03-27 10:49:55,094 - INFO - ++ git show -s --format=%ci 2329fdef8c20c6c75194f5d842b8f62ebad5c79d
+2026-03-27 10:49:55,126 - INFO - + TAG_TIME='2022-03-28 00:56:22 +0900'
+2026-03-27 10:49:55,126 - INFO - + [[ 2022-03-28 00:56:22 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v4.5.0
+2026-03-27 10:49:55,149 - INFO - Deleted tag 'v4.5.0' (was 2329fdef8)
+2026-03-27 10:49:55,149 - INFO - + read tag
+2026-03-27 10:49:55,150 - INFO - ++ git rev-list -n 1 v5.0.0
+2026-03-27 10:49:55,176 - INFO - + TAG_COMMIT=953002e6261bdd9314ee0a3314aae19479a88c7e
+2026-03-27 10:49:55,177 - INFO - ++ git show -s --format=%ci 953002e6261bdd9314ee0a3314aae19479a88c7e
+2026-03-27 10:49:55,207 - INFO - + TAG_TIME='2022-05-30 01:19:20 +0900'
++ [[ 2022-05-30 01:19:20 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:55,207 - INFO - + git tag -d v5.0.0
+2026-03-27 10:49:55,230 - INFO - Deleted tag 'v5.0.0' (was 953002e62)
+2026-03-27 10:49:55,230 - INFO - + read tag
+2026-03-27 10:49:55,231 - INFO - ++ git rev-list -n 1 v5.0.0b1
+2026-03-27 10:49:55,258 - INFO - + TAG_COMMIT=ea3468d597a4ac0e57b386b37770a73e1687aa16
+2026-03-27 10:49:55,258 - INFO - ++ git show -s --format=%ci ea3468d597a4ac0e57b386b37770a73e1687aa16
+2026-03-27 10:49:55,289 - INFO - + TAG_TIME='2022-05-09 00:54:24 +0900'
++ [[ 2022-05-09 00:54:24 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:55,289 - INFO - + git tag -d v5.0.0b1
+2026-03-27 10:49:55,312 - INFO - Deleted tag 'v5.0.0b1' (was ea3468d59)
+2026-03-27 10:49:55,312 - INFO - + read tag
+2026-03-27 10:49:55,314 - INFO - ++ git rev-list -n 1 v5.0.1
+2026-03-27 10:49:55,340 - INFO - + TAG_COMMIT=8fe27991ba23268b17fad2e2fe2548074ad6cf26
+2026-03-27 10:49:55,341 - INFO - ++ git show -s --format=%ci 8fe27991ba23268b17fad2e2fe2548074ad6cf26
+2026-03-27 10:49:55,373 - INFO - + TAG_TIME='2022-06-03 03:12:06 +0900'
++ [[ 2022-06-03 03:12:06 +0900 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.0.1
+2026-03-27 10:49:55,395 - INFO - Deleted tag 'v5.0.1' (was 8fe27991b)
+2026-03-27 10:49:55,395 - INFO - + read tag
+2026-03-27 10:49:55,397 - INFO - ++ git rev-list -n 1 v5.0.2
+2026-03-27 10:49:55,422 - INFO - + TAG_COMMIT=907d27dc6506c542c11a7dd16b560eb4be7da5fc
+2026-03-27 10:49:55,422 - INFO - ++ git show -s --format=%ci 907d27dc6506c542c11a7dd16b560eb4be7da5fc
+2026-03-27 10:49:55,452 - INFO - + TAG_TIME='2022-06-17 02:17:08 +0900'
++ [[ 2022-06-17 02:17:08 +0900 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:55,452 - INFO - + git tag -d v5.0.2
+2026-03-27 10:49:55,477 - INFO - Deleted tag 'v5.0.2' (was 907d27dc6)
+2026-03-27 10:49:55,478 - INFO - + read tag
+2026-03-27 10:49:55,479 - INFO - ++ git rev-list -n 1 v5.1.0
+2026-03-27 10:49:55,505 - INFO - + TAG_COMMIT=cc1f6cb9f48dc3b84228eb0b5e46018fba5d57f4
+2026-03-27 10:49:55,506 - INFO - ++ git show -s --format=%ci cc1f6cb9f48dc3b84228eb0b5e46018fba5d57f4
+2026-03-27 10:49:55,536 - INFO - + TAG_TIME='2022-07-24 13:03:30 +0100'
+2026-03-27 10:49:55,536 - INFO - + [[ 2022-07-24 13:03:30 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.1.0
+2026-03-27 10:49:55,561 - INFO - Deleted tag 'v5.1.0' (was 70c648465)
+2026-03-27 10:49:55,561 - INFO - + read tag
+2026-03-27 10:49:55,562 - INFO - ++ git rev-list -n 1 v5.1.1
+2026-03-27 10:49:55,589 - INFO - + TAG_COMMIT=e712eae382d213ce3f4866ad6f5b3c84ce4f4409
+2026-03-27 10:49:55,589 - INFO - ++ git show -s --format=%ci e712eae382d213ce3f4866ad6f5b3c84ce4f4409
+2026-03-27 10:49:55,620 - INFO - + TAG_TIME='2022-07-26 22:16:02 +0100'
++ [[ 2022-07-26 22:16:02 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.1.1
+2026-03-27 10:49:55,642 - INFO - Deleted tag 'v5.1.1' (was 0f0040e89)
+2026-03-27 10:49:55,643 - INFO - + read tag
+2026-03-27 10:49:55,644 - INFO - ++ git rev-list -n 1 v5.2.0
+2026-03-27 10:49:55,671 - INFO - + TAG_COMMIT=911a5fe8bb393e6a3cf946135792ad4509f3f312
+2026-03-27 10:49:55,671 - INFO - ++ git show -s --format=%ci 911a5fe8bb393e6a3cf946135792ad4509f3f312
+2026-03-27 10:49:55,702 - INFO - + TAG_TIME='2022-09-24 21:55:52 +0100'
++ [[ 2022-09-24 21:55:52 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.2.0
+2026-03-27 10:49:55,725 - INFO - Deleted tag 'v5.2.0' (was ec105600c)
+2026-03-27 10:49:55,725 - INFO - + read tag
+2026-03-27 10:49:55,726 - INFO - ++ git rev-list -n 1 v5.2.1
+2026-03-27 10:49:55,752 - INFO - + TAG_COMMIT=e0dbbc510af04970a22dcd1e836032cc29b87da2
+2026-03-27 10:49:55,753 - INFO - ++ git show -s --format=%ci e0dbbc510af04970a22dcd1e836032cc29b87da2
+2026-03-27 10:49:55,783 - INFO - + TAG_TIME='2022-09-25 20:39:57 +0100'
++ [[ 2022-09-25 20:39:57 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.2.1
+2026-03-27 10:49:55,808 - INFO - Deleted tag 'v5.2.1' (was 4fc904a24)
+2026-03-27 10:49:55,808 - INFO - + read tag
+2026-03-27 10:49:55,809 - INFO - ++ git rev-list -n 1 v5.2.2
+2026-03-27 10:49:55,835 - INFO - + TAG_COMMIT=a651e6bf4ad7a1dc293525d0a70e6d0d11b827db
+2026-03-27 10:49:55,836 - INFO - ++ git show -s --format=%ci a651e6bf4ad7a1dc293525d0a70e6d0d11b827db
+2026-03-27 10:49:55,866 - INFO - + TAG_TIME='2022-09-27 15:54:01 +0100'
++ [[ 2022-09-27 15:54:01 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.2.2
+2026-03-27 10:49:55,888 - INFO - Deleted tag 'v5.2.2' (was 08cb6b7ad)
+2026-03-27 10:49:55,888 - INFO - + read tag
+2026-03-27 10:49:55,889 - INFO - ++ git rev-list -n 1 v5.2.3
+2026-03-27 10:49:55,915 - INFO - + TAG_COMMIT=cbb19d6947d7d2a3898e2e0ca2c173071bca647b
+2026-03-27 10:49:55,915 - INFO - ++ git show -s --format=%ci cbb19d6947d7d2a3898e2e0ca2c173071bca647b
+2026-03-27 10:49:55,945 - INFO - + TAG_TIME='2022-09-30 16:08:16 +0100'
++ [[ 2022-09-30 16:08:16 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.2.3
+2026-03-27 10:49:55,967 - INFO - Deleted tag 'v5.2.3' (was 66aa3abb4)
+2026-03-27 10:49:55,968 - INFO - + read tag
+2026-03-27 10:49:55,968 - INFO - ++ git rev-list -n 1 v5.3.0
+2026-03-27 10:49:55,994 - INFO - + TAG_COMMIT=c1f2a52d5d97f874d84e4d5421c99a566242af6b
+2026-03-27 10:49:55,994 - INFO - ++ git show -s --format=%ci c1f2a52d5d97f874d84e4d5421c99a566242af6b
+2026-03-27 10:49:56,025 - INFO - + TAG_TIME='2022-10-16 10:56:11 +0100'
++ [[ 2022-10-16 10:56:11 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v5.3.0
+2026-03-27 10:49:56,050 - INFO - Deleted tag 'v5.3.0' (was d62febc2c)
+2026-03-27 10:49:56,050 - INFO - + read tag
+2026-03-27 10:49:56,051 - INFO - ++ git rev-list -n 1 v6.0.0
+2026-03-27 10:49:56,076 - INFO - + TAG_COMMIT=5b56a231afeb6e96e87871546df3db4463a61c93
+2026-03-27 10:49:56,077 - INFO - ++ git show -s --format=%ci 5b56a231afeb6e96e87871546df3db4463a61c93
+2026-03-27 10:49:56,108 - INFO - + TAG_TIME='2022-12-29 14:59:17 +0000'
++ [[ 2022-12-29 14:59:17 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.0.0
+2026-03-27 10:49:56,133 - INFO - Deleted tag 'v6.0.0' (was 184ef4e2e)
+2026-03-27 10:49:56,134 - INFO - + read tag
+2026-03-27 10:49:56,135 - INFO - ++ git rev-list -n 1 v6.0.0b1
+2026-03-27 10:49:56,163 - INFO - + TAG_COMMIT=25851e115aa9e84e8e2addb135f050e2b79e4ac2
+2026-03-27 10:49:56,164 - INFO - ++ git show -s --format=%ci 25851e115aa9e84e8e2addb135f050e2b79e4ac2
+2026-03-27 10:49:56,196 - INFO - + TAG_TIME='2022-10-16 16:55:06 +0100'
++ [[ 2022-10-16 16:55:06 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.0.0b1
+2026-03-27 10:49:56,220 - INFO - Deleted tag 'v6.0.0b1' (was 8497b463a)
+2026-03-27 10:49:56,220 - INFO - + read tag
+2026-03-27 10:49:56,221 - INFO - ++ git rev-list -n 1 v6.0.0b2
+2026-03-27 10:49:56,248 - INFO - + TAG_COMMIT=4c2a82305c3689d10bd107938cb69bad46fedda6
+2026-03-27 10:49:56,249 - INFO - ++ git show -s --format=%ci 4c2a82305c3689d10bd107938cb69bad46fedda6
+2026-03-27 10:49:56,280 - INFO - + TAG_TIME='2022-10-17 22:40:11 +0100'
++ [[ 2022-10-17 22:40:11 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.0.0b2
+2026-03-27 10:49:56,305 - INFO - Deleted tag 'v6.0.0b2' (was 5d4da0847)
+2026-03-27 10:49:56,306 - INFO - + read tag
+2026-03-27 10:49:56,307 - INFO - ++ git rev-list -n 1 v6.0.1
+2026-03-27 10:49:56,333 - INFO - + TAG_COMMIT=a27d262ffed11ef5717edfe93ae892c6f6e9fed5
+2026-03-27 10:49:56,334 - INFO - ++ git show -s --format=%ci a27d262ffed11ef5717edfe93ae892c6f6e9fed5
+2026-03-27 10:49:56,365 - INFO - + TAG_TIME='2023-01-05 11:58:30 +0000'
++ [[ 2023-01-05 11:58:30 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:56,365 - INFO - + git tag -d v6.0.1
+2026-03-27 10:49:56,387 - INFO - Deleted tag 'v6.0.1' (was 52d6a0410)
+2026-03-27 10:49:56,387 - INFO - + read tag
+2026-03-27 10:49:56,388 - INFO - ++ git rev-list -n 1 v6.1.0
+2026-03-27 10:49:56,415 - INFO - + TAG_COMMIT=4e1004a9c581ff18a66522a426150aba144dc7fe
+2026-03-27 10:49:56,416 - INFO - ++ git show -s --format=%ci 4e1004a9c581ff18a66522a426150aba144dc7fe
+2026-03-27 10:49:56,447 - INFO - + TAG_TIME='2023-01-05 12:23:09 +0000'
+2026-03-27 10:49:56,447 - INFO - + [[ 2023-01-05 12:23:09 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.1.0
+2026-03-27 10:49:56,472 - INFO - Deleted tag 'v6.1.0' (was 11c74e324)
+2026-03-27 10:49:56,472 - INFO - + read tag
+2026-03-27 10:49:56,473 - INFO - ++ git rev-list -n 1 v6.1.1
+2026-03-27 10:49:56,501 - INFO - + TAG_COMMIT=77aaa8696a5554b68e9b7daf691ccd4943e7fe7b
+2026-03-27 10:49:56,502 - INFO - ++ git show -s --format=%ci 77aaa8696a5554b68e9b7daf691ccd4943e7fe7b
+2026-03-27 10:49:56,533 - INFO - + TAG_TIME='2023-01-05 16:58:09 +0000'
++ [[ 2023-01-05 16:58:09 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.1.1
+2026-03-27 10:49:56,558 - INFO - Deleted tag 'v6.1.1' (was a3397cf26)
+2026-03-27 10:49:56,558 - INFO - + read tag
+2026-03-27 10:49:56,559 - INFO - ++ git rev-list -n 1 v6.1.2
+2026-03-27 10:49:56,586 - INFO - + TAG_COMMIT=393b40825282311a8ba81c830ef3c6fae9335c32
+2026-03-27 10:49:56,587 - INFO - ++ git show -s --format=%ci 393b40825282311a8ba81c830ef3c6fae9335c32
+2026-03-27 10:49:56,617 - INFO - + TAG_TIME='2023-01-07 17:38:13 +0000'
++ [[ 2023-01-07 17:38:13 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v6.1.2
+2026-03-27 10:49:56,640 - INFO - Deleted tag 'v6.1.2' (was 2de66daf4)
+2026-03-27 10:49:56,641 - INFO - + read tag
+2026-03-27 10:49:56,642 - INFO - ++ git rev-list -n 1 v6.1.3
+2026-03-27 10:49:56,669 - INFO - + TAG_COMMIT=776d01eb6229f5d5384da17fc15df9d50fa8e87a
+2026-03-27 10:49:56,670 - INFO - ++ git show -s --format=%ci 776d01eb6229f5d5384da17fc15df9d50fa8e87a
+2026-03-27 10:49:56,701 - INFO - + TAG_TIME='2023-01-10 15:55:21 +0000'
++ [[ 2023-01-10 15:55:21 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:56,701 - INFO - + git tag -d v6.1.3
+2026-03-27 10:49:56,727 - INFO - Deleted tag 'v6.1.3' (was fb8a9ce3b)
+2026-03-27 10:49:56,727 - INFO - + read tag
+2026-03-27 10:49:56,728 - INFO - ++ git rev-list -n 1 v6.2.1
+2026-03-27 10:49:56,755 - INFO - + TAG_COMMIT=ec993dda3690f260345133c47a4a0f6ef0b18493
+2026-03-27 10:49:56,755 - INFO - ++ git show -s --format=%ci ec993dda3690f260345133c47a4a0f6ef0b18493
+2026-03-27 10:49:56,786 - INFO - + TAG_TIME='2023-04-25 11:53:08 +0100'
++ [[ 2023-04-25 11:53:08 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:56,786 - INFO - + git tag -d v6.2.1
+2026-03-27 10:49:56,810 - INFO - Deleted tag 'v6.2.1' (was 2a12cae7f)
+2026-03-27 10:49:56,810 - INFO - + read tag
+2026-03-27 10:49:56,811 - INFO - ++ git rev-list -n 1 v7.0.0
+2026-03-27 10:49:56,836 - INFO - + TAG_COMMIT=d568b2f4f7cca743fcbf70814d15602d8129b790
+2026-03-27 10:49:56,837 - INFO - ++ git show -s --format=%ci d568b2f4f7cca743fcbf70814d15602d8129b790
+2026-03-27 10:49:56,867 - INFO - + TAG_TIME='2023-04-29 22:25:57 +0100'
++ [[ 2023-04-29 22:25:57 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:56,867 - INFO - + git tag -d v7.0.0
+2026-03-27 10:49:56,893 - INFO - Deleted tag 'v7.0.0' (was 12d51c21d)
+2026-03-27 10:49:56,893 - INFO - + read tag
+2026-03-27 10:49:56,893 - INFO - ++ git rev-list -n 1 v7.0.0rc1
+2026-03-27 10:49:56,920 - INFO - + TAG_COMMIT=1a5133ac391931d8e0e2a271fe8ea9c505176908
+2026-03-27 10:49:56,921 - INFO - ++ git show -s --format=%ci 1a5133ac391931d8e0e2a271fe8ea9c505176908
+2026-03-27 10:49:56,952 - INFO - + TAG_TIME='2023-04-28 12:30:48 +0100'
+2026-03-27 10:49:56,952 - INFO - + [[ 2023-04-28 12:30:48 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:56,952 - INFO - + git tag -d v7.0.0rc1
+2026-03-27 10:49:56,977 - INFO - Deleted tag 'v7.0.0rc1' (was a0b76f30a)
+2026-03-27 10:49:56,977 - INFO - + read tag
+2026-03-27 10:49:56,978 - INFO - ++ git rev-list -n 1 v7.0.1
+2026-03-27 10:49:57,004 - INFO - + TAG_COMMIT=d48cc783b6e48b99cbbcf5462f44c59a4ed78e6a
+2026-03-27 10:49:57,004 - INFO - ++ git show -s --format=%ci d48cc783b6e48b99cbbcf5462f44c59a4ed78e6a
+2026-03-27 10:49:57,034 - INFO - + TAG_TIME='2023-05-12 22:48:41 +0100'
++ [[ 2023-05-12 22:48:41 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:57,034 - INFO - + git tag -d v7.0.1
+2026-03-27 10:49:57,058 - INFO - Deleted tag 'v7.0.1' (was 666f0f9e1)
+2026-03-27 10:49:57,058 - INFO - + read tag
+2026-03-27 10:49:57,059 - INFO - ++ git rev-list -n 1 v7.1.0
+2026-03-27 10:49:57,084 - INFO - + TAG_COMMIT=e560f6334aa87af07304415e6aeaf42d03d1c525
+2026-03-27 10:49:57,085 - INFO - ++ git show -s --format=%ci e560f6334aa87af07304415e6aeaf42d03d1c525
+2026-03-27 10:49:57,115 - INFO - + TAG_TIME='2023-07-24 20:34:10 +0100'
++ [[ 2023-07-24 20:34:10 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.1.0
+2026-03-27 10:49:57,139 - INFO - Deleted tag 'v7.1.0' (was ef1f635f5)
+2026-03-27 10:49:57,139 - INFO - + read tag
+2026-03-27 10:49:57,140 - INFO - ++ git rev-list -n 1 v7.1.1
+2026-03-27 10:49:57,166 - INFO - + TAG_COMMIT=d8d73c16b8b86df8f1a32698229a2b818fea2e98
+2026-03-27 10:49:57,167 - INFO - ++ git show -s --format=%ci d8d73c16b8b86df8f1a32698229a2b818fea2e98
+2026-03-27 10:49:57,197 - INFO - + TAG_TIME='2023-07-27 21:35:23 +0100'
++ [[ 2023-07-27 21:35:23 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.1.1
+2026-03-27 10:49:57,221 - INFO - Deleted tag 'v7.1.1' (was cdb8a0479)
+2026-03-27 10:49:57,222 - INFO - + read tag
+2026-03-27 10:49:57,222 - INFO - ++ git rev-list -n 1 v7.1.2
+2026-03-27 10:49:57,248 - INFO - + TAG_COMMIT=320d0b631cc7d9617f5167cc61c9284674f5b2df
+2026-03-27 10:49:57,249 - INFO - ++ git show -s --format=%ci 320d0b631cc7d9617f5167cc61c9284674f5b2df
+2026-03-27 10:49:57,279 - INFO - + TAG_TIME='2023-08-02 02:56:30 +0100'
++ [[ 2023-08-02 02:56:30 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.1.2
+2026-03-27 10:49:57,304 - INFO - Deleted tag 'v7.1.2' (was 0590cbe5c)
+2026-03-27 10:49:57,304 - INFO - + read tag
+2026-03-27 10:49:57,305 - INFO - ++ git rev-list -n 1 v7.2.0
+2026-03-27 10:49:57,330 - INFO - + TAG_COMMIT=da9f8a5c33ad5eeef05dd780f2988f3ff7351ef3
+2026-03-27 10:49:57,331 - INFO - ++ git show -s --format=%ci da9f8a5c33ad5eeef05dd780f2988f3ff7351ef3
+2026-03-27 10:49:57,361 - INFO - + TAG_TIME='2023-08-17 04:29:41 +0100'
++ [[ 2023-08-17 04:29:41 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.0
+2026-03-27 10:49:57,385 - INFO - Deleted tag 'v7.2.0' (was 8dc0114ef)
+2026-03-27 10:49:57,386 - INFO - + read tag
+2026-03-27 10:49:57,386 - INFO - ++ git rev-list -n 1 v7.2.1
+2026-03-27 10:49:57,412 - INFO - + TAG_COMMIT=441a9e4d622e5f00f9fed8f59b9cac251cff9f80
+2026-03-27 10:49:57,413 - INFO - ++ git show -s --format=%ci 441a9e4d622e5f00f9fed8f59b9cac251cff9f80
+2026-03-27 10:49:57,443 - INFO - + TAG_TIME='2023-08-17 16:00:59 +0100'
++ [[ 2023-08-17 16:00:59 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.1
+2026-03-27 10:49:57,465 - INFO - Deleted tag 'v7.2.1' (was 4a94c1628)
+2026-03-27 10:49:57,465 - INFO - + read tag
+2026-03-27 10:49:57,466 - INFO - ++ git rev-list -n 1 v7.2.2
+2026-03-27 10:49:57,492 - INFO - + TAG_COMMIT=ed84d63e6f2c4fd43b97fc43ee8be4156a13af9e
+2026-03-27 10:49:57,493 - INFO - ++ git show -s --format=%ci ed84d63e6f2c4fd43b97fc43ee8be4156a13af9e
+2026-03-27 10:49:57,523 - INFO - + TAG_TIME='2023-08-17 17:56:38 +0100'
++ [[ 2023-08-17 17:56:38 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.2
+2026-03-27 10:49:57,548 - INFO - Deleted tag 'v7.2.2' (was d6b21678c)
+2026-03-27 10:49:57,548 - INFO - + read tag
+2026-03-27 10:49:57,549 - INFO - ++ git rev-list -n 1 v7.2.3
+2026-03-27 10:49:57,574 - INFO - + TAG_COMMIT=2f6ea1422b08f9494f34b80c2ff6c96b5f396fdc
+2026-03-27 10:49:57,575 - INFO - ++ git show -s --format=%ci 2f6ea1422b08f9494f34b80c2ff6c96b5f396fdc
+2026-03-27 10:49:57,605 - INFO - + TAG_TIME='2023-08-23 23:17:19 +0100'
++ [[ 2023-08-23 23:17:19 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.3
+2026-03-27 10:49:57,629 - INFO - Deleted tag 'v7.2.3' (was 584f256fc)
+2026-03-27 10:49:57,629 - INFO - + read tag
+2026-03-27 10:49:57,630 - INFO - ++ git rev-list -n 1 v7.2.4
+2026-03-27 10:49:57,655 - INFO - + TAG_COMMIT=3256f1f22092a3e9c2925472f6f0b41e4f09e902
+2026-03-27 10:49:57,656 - INFO - ++ git show -s --format=%ci 3256f1f22092a3e9c2925472f6f0b41e4f09e902
+2026-03-27 10:49:57,686 - INFO - + TAG_TIME='2023-08-28 05:16:00 +0100'
++ [[ 2023-08-28 05:16:00 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.4
+2026-03-27 10:49:57,710 - INFO - Deleted tag 'v7.2.4' (was e9b7fda4c)
+2026-03-27 10:49:57,711 - INFO - + read tag
+2026-03-27 10:49:57,711 - INFO - ++ git rev-list -n 1 v7.2.5
+2026-03-27 10:49:57,737 - INFO - + TAG_COMMIT=fcc38997f1d9b728bb4ffc64fc362c7763a4ee25
+2026-03-27 10:49:57,738 - INFO - ++ git show -s --format=%ci fcc38997f1d9b728bb4ffc64fc362c7763a4ee25
+2026-03-27 10:49:57,767 - INFO - + TAG_TIME='2023-08-30 22:55:02 +0100'
++ [[ 2023-08-30 22:55:02 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:57,767 - INFO - + git tag -d v7.2.5
+2026-03-27 10:49:57,789 - INFO - Deleted tag 'v7.2.5' (was 9abead7f5)
+2026-03-27 10:49:57,790 - INFO - + read tag
+2026-03-27 10:49:57,790 - INFO - ++ git rev-list -n 1 v7.2.6
+2026-03-27 10:49:57,816 - INFO - + TAG_COMMIT=cf7d2759af0852d67288e58d823d51fe860749ca
+2026-03-27 10:49:57,817 - INFO - ++ git show -s --format=%ci cf7d2759af0852d67288e58d823d51fe860749ca
+2026-03-27 10:49:57,847 - INFO - + TAG_TIME='2023-09-13 23:57:27 +0100'
+2026-03-27 10:49:57,847 - INFO - + [[ 2023-09-13 23:57:27 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.2.6
+2026-03-27 10:49:57,872 - INFO - Deleted tag 'v7.2.6' (was b92684968)
+2026-03-27 10:49:57,872 - INFO - + read tag
+2026-03-27 10:49:57,873 - INFO - ++ git rev-list -n 1 v7.3.0
+2026-03-27 10:49:57,898 - INFO - + TAG_COMMIT=092bac7f9ca21afd3373a64544da40bab2cab4e0
+2026-03-27 10:49:57,899 - INFO - ++ git show -s --format=%ci 092bac7f9ca21afd3373a64544da40bab2cab4e0
+2026-03-27 10:49:57,929 - INFO - + TAG_TIME='2024-04-16 23:58:37 +0100'
+2026-03-27 10:49:57,929 - INFO - + [[ 2024-04-16 23:58:37 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.3.0
+2026-03-27 10:49:57,952 - INFO - Deleted tag 'v7.3.0' (was 97e622747)
+2026-03-27 10:49:57,952 - INFO - + read tag
+2026-03-27 10:49:57,953 - INFO - ++ git rev-list -n 1 v7.3.1
+2026-03-27 10:49:57,979 - INFO - + TAG_COMMIT=8af2c43ca526c710e1835f3c8dc65bcbcf880885
+2026-03-27 10:49:57,979 - INFO - ++ git show -s --format=%ci 8af2c43ca526c710e1835f3c8dc65bcbcf880885
+2026-03-27 10:49:58,009 - INFO - + TAG_TIME='2024-04-17 01:07:20 +0100'
++ [[ 2024-04-17 01:07:20 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,010 - INFO - + git tag -d v7.3.1
+2026-03-27 10:49:58,034 - INFO - Deleted tag 'v7.3.1' (was 782a91a42)
+2026-03-27 10:49:58,035 - INFO - + read tag
+2026-03-27 10:49:58,035 - INFO - ++ git rev-list -n 1 v7.3.2
+2026-03-27 10:49:58,061 - INFO - + TAG_COMMIT=eb413577149d9f6b7b4cf08101f62be92db54986
+2026-03-27 10:49:58,063 - INFO - ++ git show -s --format=%ci eb413577149d9f6b7b4cf08101f62be92db54986
+2026-03-27 10:49:58,092 - INFO - + TAG_TIME='2024-04-17 01:53:19 +0100'
++ [[ 2024-04-17 01:53:19 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,092 - INFO - + git tag -d v7.3.2
+2026-03-27 10:49:58,116 - INFO - Deleted tag 'v7.3.2' (was 2fd8704b6)
+2026-03-27 10:49:58,117 - INFO - + read tag
+2026-03-27 10:49:58,118 - INFO - ++ git rev-list -n 1 v7.3.3
+2026-03-27 10:49:58,144 - INFO - + TAG_COMMIT=90e82d0127d80b47cb2a74a8391b4e0595121ae9
+2026-03-27 10:49:58,145 - INFO - ++ git show -s --format=%ci 90e82d0127d80b47cb2a74a8391b4e0595121ae9
+2026-03-27 10:49:58,174 - INFO - + TAG_TIME='2024-04-17 02:30:03 +0100'
++ [[ 2024-04-17 02:30:03 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,174 - INFO - + git tag -d v7.3.3
+2026-03-27 10:49:58,197 - INFO - Deleted tag 'v7.3.3' (was 36f4cf320)
+2026-03-27 10:49:58,197 - INFO - + read tag
+2026-03-27 10:49:58,198 - INFO - ++ git rev-list -n 1 v7.3.4
+2026-03-27 10:49:58,224 - INFO - + TAG_COMMIT=9d649e235bbff6ff19e6722e630e8e922b05371c
+2026-03-27 10:49:58,225 - INFO - ++ git show -s --format=%ci 9d649e235bbff6ff19e6722e630e8e922b05371c
+2026-03-27 10:49:58,255 - INFO - + TAG_TIME='2024-04-17 02:38:22 +0100'
++ [[ 2024-04-17 02:38:22 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.3.4
+2026-03-27 10:49:58,277 - INFO - Deleted tag 'v7.3.4' (was 8e2aa9e7f)
+2026-03-27 10:49:58,278 - INFO - + read tag
+2026-03-27 10:49:58,279 - INFO - ++ git rev-list -n 1 v7.3.5
+2026-03-27 10:49:58,305 - INFO - + TAG_COMMIT=da4c6a783066f0eb711f109461275415f99e3568
+2026-03-27 10:49:58,306 - INFO - ++ git show -s --format=%ci da4c6a783066f0eb711f109461275415f99e3568
+2026-03-27 10:49:58,336 - INFO - + TAG_TIME='2024-04-17 05:11:21 +0100'
++ [[ 2024-04-17 05:11:21 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.3.5
+2026-03-27 10:49:58,358 - INFO - Deleted tag 'v7.3.5' (was f7097a8f2)
+2026-03-27 10:49:58,358 - INFO - + read tag
+2026-03-27 10:49:58,359 - INFO - ++ git rev-list -n 1 v7.3.6
+2026-03-27 10:49:58,384 - INFO - + TAG_COMMIT=630b4fb9df3fa3c2c74c96a84077b5e9e66a2066
+2026-03-27 10:49:58,385 - INFO - ++ git show -s --format=%ci 630b4fb9df3fa3c2c74c96a84077b5e9e66a2066
+2026-03-27 10:49:58,416 - INFO - + TAG_TIME='2024-04-17 22:01:02 +0100'
++ [[ 2024-04-17 22:01:02 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,416 - INFO - + git tag -d v7.3.6
+2026-03-27 10:49:58,438 - INFO - Deleted tag 'v7.3.6' (was 74b1b803c)
+2026-03-27 10:49:58,439 - INFO - + read tag
+2026-03-27 10:49:58,439 - INFO - ++ git rev-list -n 1 v7.3.7
+2026-03-27 10:49:58,465 - INFO - + TAG_COMMIT=de4ac2fbdebae529a973910e96794645158f0401
+2026-03-27 10:49:58,466 - INFO - ++ git show -s --format=%ci de4ac2fbdebae529a973910e96794645158f0401
+2026-03-27 10:49:58,496 - INFO - + TAG_TIME='2024-04-19 05:43:08 +0100'
++ [[ 2024-04-19 05:43:08 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,496 - INFO - + git tag -d v7.3.7
+2026-03-27 10:49:58,518 - INFO - Deleted tag 'v7.3.7' (was 143474397)
+2026-03-27 10:49:58,518 - INFO - + read tag
+2026-03-27 10:49:58,519 - INFO - ++ git rev-list -n 1 v7.4.0
+2026-03-27 10:49:58,545 - INFO - + TAG_COMMIT=e9388497692784e6ef3ddacb3723289362032b6a
+2026-03-27 10:49:58,546 - INFO - ++ git show -s --format=%ci e9388497692784e6ef3ddacb3723289362032b6a
+2026-03-27 10:49:58,576 - INFO - + TAG_TIME='2024-07-15 06:01:44 +0100'
++ [[ 2024-07-15 06:01:44 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,576 - INFO - + git tag -d v7.4.0
+2026-03-27 10:49:58,597 - INFO - Deleted tag 'v7.4.0' (was 38205100d)
+2026-03-27 10:49:58,598 - INFO - + read tag
+2026-03-27 10:49:58,599 - INFO - ++ git rev-list -n 1 v7.4.1
+2026-03-27 10:49:58,624 - INFO - + TAG_COMMIT=1dc45fd94bc847ec6761b5246963c471cd1caf6e
+2026-03-27 10:49:58,626 - INFO - ++ git show -s --format=%ci 1dc45fd94bc847ec6761b5246963c471cd1caf6e
+2026-03-27 10:49:58,656 - INFO - + TAG_TIME='2024-07-15 11:01:42 +0100'
++ [[ 2024-07-15 11:01:42 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.4.1
+2026-03-27 10:49:58,680 - INFO - Deleted tag 'v7.4.1' (was 5920c33f9)
+2026-03-27 10:49:58,681 - INFO - + read tag
+2026-03-27 10:49:58,682 - INFO - ++ git rev-list -n 1 v7.4.2
+2026-03-27 10:49:58,707 - INFO - + TAG_COMMIT=1afa344f87f6944cd725cb74f755d29bdb7751c8
+2026-03-27 10:49:58,708 - INFO - ++ git show -s --format=%ci 1afa344f87f6944cd725cb74f755d29bdb7751c8
+2026-03-27 10:49:58,738 - INFO - + TAG_TIME='2024-07-15 12:01:13 +0100'
++ [[ 2024-07-15 12:01:13 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,738 - INFO - + git tag -d v7.4.2
+2026-03-27 10:49:58,763 - INFO - Deleted tag 'v7.4.2' (was a5f7bd793)
+2026-03-27 10:49:58,763 - INFO - + read tag
+2026-03-27 10:49:58,764 - INFO - ++ git rev-list -n 1 v7.4.3
+2026-03-27 10:49:58,790 - INFO - + TAG_COMMIT=c4a7f5bb76bdcf5e5d72654a622c9991d78ed354
+2026-03-27 10:49:58,790 - INFO - ++ git show -s --format=%ci c4a7f5bb76bdcf5e5d72654a622c9991d78ed354
+2026-03-27 10:49:58,820 - INFO - + TAG_TIME='2024-07-15 13:00:42 +0100'
++ [[ 2024-07-15 13:00:42 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,820 - INFO - + git tag -d v7.4.3
+2026-03-27 10:49:58,842 - INFO - Deleted tag 'v7.4.3' (was fefac9da7)
+2026-03-27 10:49:58,843 - INFO - + read tag
+2026-03-27 10:49:58,844 - INFO - ++ git rev-list -n 1 v7.4.4
+2026-03-27 10:49:58,869 - INFO - + TAG_COMMIT=1e1356506ddd510df1e8d1a3c35f68a07752d784
+2026-03-27 10:49:58,870 - INFO - ++ git show -s --format=%ci 1e1356506ddd510df1e8d1a3c35f68a07752d784
+2026-03-27 10:49:58,900 - INFO - + TAG_TIME='2024-07-15 19:17:40 +0100'
++ [[ 2024-07-15 19:17:40 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.4.4
+2026-03-27 10:49:58,922 - INFO - Deleted tag 'v7.4.4' (was 1117da284)
+2026-03-27 10:49:58,922 - INFO - + read tag
+2026-03-27 10:49:58,923 - INFO - ++ git rev-list -n 1 v7.4.5
+2026-03-27 10:49:58,949 - INFO - + TAG_COMMIT=8b4709dfaedb02f26e1bec2cc887d9cd73cab5c7
+2026-03-27 10:49:58,950 - INFO - ++ git show -s --format=%ci 8b4709dfaedb02f26e1bec2cc887d9cd73cab5c7
+2026-03-27 10:49:58,979 - INFO - + TAG_TIME='2024-07-16 21:05:24 +0100'
++ [[ 2024-07-16 21:05:24 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:58,979 - INFO - + git tag -d v7.4.5
+2026-03-27 10:49:59,001 - INFO - Deleted tag 'v7.4.5' (was 46928cf44)
+2026-03-27 10:49:59,001 - INFO - + read tag
+2026-03-27 10:49:59,002 - INFO - ++ git rev-list -n 1 v7.4.6
+2026-03-27 10:49:59,028 - INFO - + TAG_COMMIT=174348677617c31008cbd504c608cb2c5fd66f36
+2026-03-27 10:49:59,029 - INFO - ++ git show -s --format=%ci 174348677617c31008cbd504c608cb2c5fd66f36
+2026-03-27 10:49:59,058 - INFO - + TAG_TIME='2024-07-18 13:28:11 +0100'
+2026-03-27 10:49:59,058 - INFO - + [[ 2024-07-18 13:28:11 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.4.6
+2026-03-27 10:49:59,080 - INFO - Deleted tag 'v7.4.6' (was ee4e5457f)
+2026-03-27 10:49:59,080 - INFO - + read tag
+2026-03-27 10:49:59,081 - INFO - ++ git rev-list -n 1 v7.4.7
+2026-03-27 10:49:59,106 - INFO - + TAG_COMMIT=0d912c85fd3ec385432fe707f6a0678425d1e841
+2026-03-27 10:49:59,107 - INFO - ++ git show -s --format=%ci 0d912c85fd3ec385432fe707f6a0678425d1e841
+2026-03-27 10:49:59,137 - INFO - + TAG_TIME='2024-07-20 15:45:39 +0100'
+2026-03-27 10:49:59,137 - INFO - + [[ 2024-07-20 15:45:39 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v7.4.7
+2026-03-27 10:49:59,159 - INFO - Deleted tag 'v7.4.7' (was 73730243d)
+2026-03-27 10:49:59,159 - INFO - + read tag
+2026-03-27 10:49:59,160 - INFO - ++ git rev-list -n 1 v8.0.0
+2026-03-27 10:49:59,186 - INFO - + TAG_COMMIT=0e8a6383be58ed1528c26a924abb73c0b4672e69
+2026-03-27 10:49:59,186 - INFO - ++ git show -s --format=%ci 0e8a6383be58ed1528c26a924abb73c0b4672e69
+2026-03-27 10:49:59,216 - INFO - + TAG_TIME='2024-07-29 19:09:29 +0100'
++ [[ 2024-07-29 19:09:29 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:59,216 - INFO - + git tag -d v8.0.0
+2026-03-27 10:49:59,238 - INFO - Deleted tag 'v8.0.0' (was 86e374d85)
+2026-03-27 10:49:59,238 - INFO - + read tag
+2026-03-27 10:49:59,239 - INFO - ++ git rev-list -n 1 v8.0.0rc1
+2026-03-27 10:49:59,265 - INFO - + TAG_COMMIT=ace5744b82345150baf3c71d6f47a257c89001ec
+2026-03-27 10:49:59,266 - INFO - ++ git show -s --format=%ci ace5744b82345150baf3c71d6f47a257c89001ec
+2026-03-27 10:49:59,296 - INFO - + TAG_TIME='2024-07-24 21:12:05 +0100'
++ [[ 2024-07-24 21:12:05 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.0.0rc1
+2026-03-27 10:49:59,318 - INFO - Deleted tag 'v8.0.0rc1' (was bf9f9d239)
+2026-03-27 10:49:59,318 - INFO - + read tag
+2026-03-27 10:49:59,319 - INFO - ++ git rev-list -n 1 v8.0.1
+2026-03-27 10:49:59,345 - INFO - + TAG_COMMIT=d9bda77b79b054dc19aec679b179d8b8eaf6e165
+2026-03-27 10:49:59,346 - INFO - ++ git show -s --format=%ci d9bda77b79b054dc19aec679b179d8b8eaf6e165
+2026-03-27 10:49:59,376 - INFO - + TAG_TIME='2024-07-30 01:32:34 +0100'
++ [[ 2024-07-30 01:32:34 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.0.1
+2026-03-27 10:49:59,398 - INFO - Deleted tag 'v8.0.1' (was b5c594043)
+2026-03-27 10:49:59,398 - INFO - + read tag
+2026-03-27 10:49:59,399 - INFO - ++ git rev-list -n 1 v8.0.2
+2026-03-27 10:49:59,425 - INFO - + TAG_COMMIT=043750e406d8fe03953f5b565b36e05aef6866ec
+2026-03-27 10:49:59,426 - INFO - ++ git show -s --format=%ci 043750e406d8fe03953f5b565b36e05aef6866ec
+2026-03-27 10:49:59,457 - INFO - + TAG_TIME='2024-07-30 02:37:59 +0100'
++ [[ 2024-07-30 02:37:59 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:59,457 - INFO - + git tag -d v8.0.2
+2026-03-27 10:49:59,482 - INFO - Deleted tag 'v8.0.2' (was 92c49af41)
+2026-03-27 10:49:59,482 - INFO - + read tag
+2026-03-27 10:49:59,483 - INFO - ++ git rev-list -n 1 v8.1.0
+2026-03-27 10:49:59,509 - INFO - + TAG_COMMIT=2f1d775dfda9e4f81dfff6cfbe9edf7731e32a97
+2026-03-27 10:49:59,509 - INFO - ++ git show -s --format=%ci 2f1d775dfda9e4f81dfff6cfbe9edf7731e32a97
+2026-03-27 10:49:59,539 - INFO - + TAG_TIME='2024-10-10 16:55:09 +0100'
++ [[ 2024-10-10 16:55:09 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.1.0
+2026-03-27 10:49:59,561 - INFO - Deleted tag 'v8.1.0' (was c01e909b1)
+2026-03-27 10:49:59,562 - INFO - + read tag
+2026-03-27 10:49:59,562 - INFO - ++ git rev-list -n 1 v8.1.1
+2026-03-27 10:49:59,588 - INFO - + TAG_COMMIT=61d88859d79cff69f16da20294dceedb5e653f95
+2026-03-27 10:49:59,589 - INFO - ++ git show -s --format=%ci 61d88859d79cff69f16da20294dceedb5e653f95
+2026-03-27 10:49:59,619 - INFO - + TAG_TIME='2024-10-11 23:48:15 +0100'
++ [[ 2024-10-11 23:48:15 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:59,619 - INFO - + git tag -d v8.1.1
+2026-03-27 10:49:59,641 - INFO - Deleted tag 'v8.1.1' (was 7b95d75c0)
+2026-03-27 10:49:59,641 - INFO - + read tag
+2026-03-27 10:49:59,642 - INFO - ++ git rev-list -n 1 v8.1.2
+2026-03-27 10:49:59,668 - INFO - + TAG_COMMIT=a72b47bb408923cb7809eb9f96885545184e3773
+2026-03-27 10:49:59,669 - INFO - ++ git show -s --format=%ci a72b47bb408923cb7809eb9f96885545184e3773
+2026-03-27 10:49:59,700 - INFO - + TAG_TIME='2024-10-12 19:37:39 +0100'
++ [[ 2024-10-12 19:37:39 +0100 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:59,700 - INFO - + git tag -d v8.1.2
+2026-03-27 10:49:59,724 - INFO - Deleted tag 'v8.1.2' (was 160df7166)
+2026-03-27 10:49:59,724 - INFO - + read tag
+2026-03-27 10:49:59,725 - INFO - ++ git rev-list -n 1 v8.1.3
+2026-03-27 10:49:59,751 - INFO - + TAG_COMMIT=a1510de4777eaa2e569435f95b05f6f3293d7035
+2026-03-27 10:49:59,752 - INFO - ++ git show -s --format=%ci a1510de4777eaa2e569435f95b05f6f3293d7035
+2026-03-27 10:49:59,782 - INFO - + TAG_TIME='2024-10-13 21:23:48 +0100'
++ [[ 2024-10-13 21:23:48 +0100 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.1.3
+2026-03-27 10:49:59,804 - INFO - + read tag
+2026-03-27 10:49:59,804 - INFO - Deleted tag 'v8.1.3' (was 60e69baf1)
+2026-03-27 10:49:59,805 - INFO - ++ git rev-list -n 1 v8.2.0
+2026-03-27 10:49:59,830 - INFO - + TAG_COMMIT=78bb5a18436d4d5def5134063f31078b2d39c939
+2026-03-27 10:49:59,831 - INFO - ++ git show -s --format=%ci 78bb5a18436d4d5def5134063f31078b2d39c939
+2026-03-27 10:49:59,860 - INFO - + TAG_TIME='2025-02-18 19:50:48 +0000'
++ [[ 2025-02-18 19:50:48 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.2.0
+2026-03-27 10:49:59,882 - INFO - Deleted tag 'v8.2.0' (was dfb581b1f)
+2026-03-27 10:49:59,882 - INFO - + read tag
+2026-03-27 10:49:59,883 - INFO - ++ git rev-list -n 1 v8.2.0rc1
+2026-03-27 10:49:59,909 - INFO - + TAG_COMMIT=657d2c1e67b78b21674a065106f8ebbc18121b89
+2026-03-27 10:49:59,910 - INFO - ++ git show -s --format=%ci 657d2c1e67b78b21674a065106f8ebbc18121b89
+2026-03-27 10:49:59,940 - INFO - + TAG_TIME='2025-02-16 05:40:50 +0000'
++ [[ 2025-02-16 05:40:50 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:49:59,940 - INFO - + git tag -d v8.2.0rc1
+2026-03-27 10:49:59,962 - INFO - Deleted tag 'v8.2.0rc1' (was e39e87736)
+2026-03-27 10:49:59,962 - INFO - + read tag
+2026-03-27 10:49:59,963 - INFO - ++ git rev-list -n 1 v8.2.0rc2
+2026-03-27 10:49:59,988 - INFO - + TAG_COMMIT=684ed565022eed53d50092678905201a04f461d9
+2026-03-27 10:49:59,989 - INFO - ++ git show -s --format=%ci 684ed565022eed53d50092678905201a04f461d9
+2026-03-27 10:50:00,019 - INFO - + TAG_TIME='2025-02-18 00:37:18 +0000'
+2026-03-27 10:50:00,019 - INFO - + [[ 2025-02-18 00:37:18 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v8.2.0rc2
+2026-03-27 10:50:00,041 - INFO - Deleted tag 'v8.2.0rc2' (was 7a45bc151)
+2026-03-27 10:50:00,041 - INFO - + read tag
+2026-03-27 10:50:00,042 - INFO - ++ git rev-list -n 1 v8.2.1
+2026-03-27 10:50:00,067 - INFO - + TAG_COMMIT=0215a73cbfd9326c5fd54160da277112fd6435c9
+2026-03-27 10:50:00,068 - INFO - ++ git show -s --format=%ci 0215a73cbfd9326c5fd54160da277112fd6435c9
+2026-03-27 10:50:00,097 - INFO - + TAG_TIME='2025-02-21 23:25:47 +0000'
++ [[ 2025-02-21 23:25:47 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,097 - INFO - + git tag -d v8.2.1
+2026-03-27 10:50:00,119 - INFO - Deleted tag 'v8.2.1' (was fca89debf)
+2026-03-27 10:50:00,119 - INFO - + read tag
+2026-03-27 10:50:00,120 - INFO - ++ git rev-list -n 1 v8.2.2
+2026-03-27 10:50:00,145 - INFO - + TAG_COMMIT=ee96ef304265d9969488f7bcd09b37826ac7c43c
+2026-03-27 10:50:00,146 - INFO - ++ git show -s --format=%ci ee96ef304265d9969488f7bcd09b37826ac7c43c
+2026-03-27 10:50:00,176 - INFO - + TAG_TIME='2025-03-02 21:00:08 +0000'
++ [[ 2025-03-02 21:00:08 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,176 - INFO - + git tag -d v8.2.2
+2026-03-27 10:50:00,198 - INFO - Deleted tag 'v8.2.2' (was b422116d1)
+2026-03-27 10:50:00,198 - INFO - + read tag
+2026-03-27 10:50:00,199 - INFO - ++ git rev-list -n 1 v8.2.3
+2026-03-27 10:50:00,224 - INFO - + TAG_COMMIT=847ad0c991e21db9daa02fec09acbd456f353300
+2026-03-27 10:50:00,225 - INFO - ++ git show -s --format=%ci 847ad0c991e21db9daa02fec09acbd456f353300
+2026-03-27 10:50:00,255 - INFO - + TAG_TIME='2025-03-02 22:29:09 +0000'
++ [[ 2025-03-02 22:29:09 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,255 - INFO - + git tag -d v8.2.3
+2026-03-27 10:50:00,279 - INFO - Deleted tag 'v8.2.3' (was 4e67067d8)
+2026-03-27 10:50:00,279 - INFO - + read tag
+2026-03-27 10:50:00,280 - INFO - ++ git rev-list -n 1 v9.0.0
+2026-03-27 10:50:00,305 - INFO - + TAG_COMMIT=aea90c92aadb186b82e96c2b7ad6f2b865f70df1
+2026-03-27 10:50:00,306 - INFO - ++ git show -s --format=%ci aea90c92aadb186b82e96c2b7ad6f2b865f70df1
+2026-03-27 10:50:00,336 - INFO - + TAG_TIME='2025-11-30 12:38:37 +0000'
++ [[ 2025-11-30 12:38:37 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,336 - INFO - + git tag -d v9.0.0
+2026-03-27 10:50:00,358 - INFO - Deleted tag 'v9.0.0' (was 3f30c9599)
+2026-03-27 10:50:00,358 - INFO - + read tag
+2026-03-27 10:50:00,359 - INFO - ++ git rev-list -n 1 v9.0.0rc1
+2026-03-27 10:50:00,384 - INFO - + TAG_COMMIT=f85eef11bf70be6a25b4fab75575c430b0e1afa1
+2026-03-27 10:50:00,386 - INFO - ++ git show -s --format=%ci f85eef11bf70be6a25b4fab75575c430b0e1afa1
+2026-03-27 10:50:00,415 - INFO - + TAG_TIME='2025-11-28 00:45:01 +0000'
++ [[ 2025-11-28 00:45:01 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,415 - INFO - + git tag -d v9.0.0rc1
+2026-03-27 10:50:00,438 - INFO - Deleted tag 'v9.0.0rc1' (was 5408d72ee)
+2026-03-27 10:50:00,439 - INFO - + read tag
+2026-03-27 10:50:00,440 - INFO - ++ git rev-list -n 1 v9.0.0rc2
+2026-03-27 10:50:00,465 - INFO - + TAG_COMMIT=15986f897b078440307624e147e3aa54930d57e1
+2026-03-27 10:50:00,466 - INFO - ++ git show -s --format=%ci 15986f897b078440307624e147e3aa54930d57e1
+2026-03-27 10:50:00,495 - INFO - + TAG_TIME='2025-11-29 02:43:22 +0000'
++ [[ 2025-11-29 02:43:22 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,495 - INFO - + git tag -d v9.0.0rc2
+2026-03-27 10:50:00,518 - INFO - Deleted tag 'v9.0.0rc2' (was 662f5d8cd)
+2026-03-27 10:50:00,518 - INFO - + read tag
+2026-03-27 10:50:00,519 - INFO - ++ git rev-list -n 1 v9.0.0rc3
+2026-03-27 10:50:00,545 - INFO - + TAG_COMMIT=dac2d8bc04034cc2af5695bb1b7e91d012ddfd81
+2026-03-27 10:50:00,545 - INFO - ++ git show -s --format=%ci dac2d8bc04034cc2af5695bb1b7e91d012ddfd81
+2026-03-27 10:50:00,575 - INFO - + TAG_TIME='2025-11-30 03:02:31 +0000'
+2026-03-27 10:50:00,575 - INFO - + [[ 2025-11-30 03:02:31 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v9.0.0rc3
+2026-03-27 10:50:00,597 - INFO - Deleted tag 'v9.0.0rc3' (was 7f1d82bf2)
+2026-03-27 10:50:00,597 - INFO - + read tag
+2026-03-27 10:50:00,598 - INFO - ++ git rev-list -n 1 v9.0.0rc4
+2026-03-27 10:50:00,623 - INFO - + TAG_COMMIT=17380a536d0238f27609545f04b76338c3067987
+2026-03-27 10:50:00,624 - INFO - ++ git show -s --format=%ci 17380a536d0238f27609545f04b76338c3067987
+2026-03-27 10:50:00,653 - INFO - + TAG_TIME='2025-11-30 06:16:59 +0000'
++ [[ 2025-11-30 06:16:59 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,653 - INFO - + git tag -d v9.0.0rc4
+2026-03-27 10:50:00,677 - INFO - Deleted tag 'v9.0.0rc4' (was b1bd7f592)
+2026-03-27 10:50:00,677 - INFO - + read tag
+2026-03-27 10:50:00,678 - INFO - ++ git rev-list -n 1 v9.0.1
+2026-03-27 10:50:00,703 - INFO - + TAG_COMMIT=a8373783dcf613b25fe54a24b9dfc716c38f6d20
+2026-03-27 10:50:00,704 - INFO - ++ git show -s --format=%ci a8373783dcf613b25fe54a24b9dfc716c38f6d20
+2026-03-27 10:50:00,734 - INFO - + TAG_TIME='2025-12-01 16:41:42 +0000'
++ [[ 2025-12-01 16:41:42 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v9.0.1
+2026-03-27 10:50:00,758 - INFO - Deleted tag 'v9.0.1' (was 62b5bf2a0)
+2026-03-27 10:50:00,759 - INFO - + read tag
+2026-03-27 10:50:00,760 - INFO - ++ git rev-list -n 1 v9.0.2
+2026-03-27 10:50:00,785 - INFO - + TAG_COMMIT=1ac581c7334583710a0c9651f02d0debf7e306cf
+2026-03-27 10:50:00,786 - INFO - ++ git show -s --format=%ci 1ac581c7334583710a0c9651f02d0debf7e306cf
+2026-03-27 10:50:00,816 - INFO - + TAG_TIME='2025-12-03 23:00:31 +0000'
++ [[ 2025-12-03 23:00:31 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,816 - INFO - + git tag -d v9.0.2
+2026-03-27 10:50:00,838 - INFO - Deleted tag 'v9.0.2' (was efc2c5772)
+2026-03-27 10:50:00,839 - INFO - + read tag
+2026-03-27 10:50:00,839 - INFO - ++ git rev-list -n 1 v9.0.3
+2026-03-27 10:50:00,865 - INFO - + TAG_COMMIT=df8a9e7e9ecb3e1bedb669e0d5ae3850b78e5114
+2026-03-27 10:50:00,866 - INFO - ++ git show -s --format=%ci df8a9e7e9ecb3e1bedb669e0d5ae3850b78e5114
+2026-03-27 10:50:00,896 - INFO - + TAG_TIME='2025-12-04 01:45:43 +0000'
++ [[ 2025-12-04 01:45:43 +0000 > 2020-10-03 21:42:53 +0900 ]]
++ git tag -d v9.0.3
+2026-03-27 10:50:00,918 - INFO - Deleted tag 'v9.0.3' (was 74e015d44)
+2026-03-27 10:50:00,918 - INFO - + read tag
+2026-03-27 10:50:00,919 - INFO - ++ git rev-list -n 1 v9.0.4
+2026-03-27 10:50:00,945 - INFO - + TAG_COMMIT=8ddba7e4cb5fdc035b9b18b2a8594724a3a33b86
+2026-03-27 10:50:00,945 - INFO - ++ git show -s --format=%ci 8ddba7e4cb5fdc035b9b18b2a8594724a3a33b86
+2026-03-27 10:50:00,975 - INFO - + TAG_TIME='2025-12-04 07:44:01 +0000'
++ [[ 2025-12-04 07:44:01 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:00,975 - INFO - + git tag -d v9.0.4
+2026-03-27 10:50:00,997 - INFO - Deleted tag 'v9.0.4' (was d7ded8933)
+2026-03-27 10:50:00,997 - INFO - + read tag
+2026-03-27 10:50:00,998 - INFO - ++ git rev-list -n 1 v9.1.0
+2026-03-27 10:50:01,024 - INFO - + TAG_COMMIT=cc7c6f435ad37bb12264f8118c8461b230e6830c
+2026-03-27 10:50:01,024 - INFO - ++ git show -s --format=%ci cc7c6f435ad37bb12264f8118c8461b230e6830c
+2026-03-27 10:50:01,054 - INFO - + TAG_TIME='2025-12-31 15:07:44 +0000'
++ [[ 2025-12-31 15:07:44 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:01,054 - INFO - + git tag -d v9.1.0
+2026-03-27 10:50:01,076 - INFO - Deleted tag 'v9.1.0' (was a7a88a2fc)
+2026-03-27 10:50:01,076 - INFO - + read tag
+2026-03-27 10:50:01,077 - INFO - ++ git rev-list -n 1 v9.1.0rc1
+2026-03-27 10:50:01,102 - INFO - + TAG_COMMIT=5c2ab212b44a844d977ef6ddab89590af3eb65cd
+2026-03-27 10:50:01,103 - INFO - ++ git show -s --format=%ci 5c2ab212b44a844d977ef6ddab89590af3eb65cd
+2026-03-27 10:50:01,133 - INFO - + TAG_TIME='2025-12-19 23:29:18 +0000'
++ [[ 2025-12-19 23:29:18 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:01,133 - INFO - + git tag -d v9.1.0rc1
+2026-03-27 10:50:01,155 - INFO - Deleted tag 'v9.1.0rc1' (was c52b13660)
+2026-03-27 10:50:01,155 - INFO - + read tag
+2026-03-27 10:50:01,157 - INFO - ++ git rev-list -n 1 v9.1.0rc2
+2026-03-27 10:50:01,182 - INFO - + TAG_COMMIT=8ab960098a8e12b8893bd3ceafc394759118346b
+2026-03-27 10:50:01,183 - INFO - ++ git show -s --format=%ci 8ab960098a8e12b8893bd3ceafc394759118346b
+2026-03-27 10:50:01,214 - INFO - + TAG_TIME='2025-12-27 03:15:19 +0000'
++ [[ 2025-12-27 03:15:19 +0000 > 2020-10-03 21:42:53 +0900 ]]
+2026-03-27 10:50:01,214 - INFO - + git tag -d v9.1.0rc2
+2026-03-27 10:50:01,237 - INFO - Deleted tag 'v9.1.0rc2' (was f8c4c554c)
+2026-03-27 10:50:01,237 - INFO - + read tag
+2026-03-27 10:50:01,238 - INFO - + git reflog expire --expire=now --all
+2026-03-27 10:50:01,264 - INFO - + git gc --prune=now --aggressive
+2026-03-27 10:50:12,248 - INFO - ++ date -d '2020-10-03 21:42:53 +0900 + 1 second' '+%Y-%m-%d %H:%M:%S'
+2026-03-27 10:50:12,258 - INFO - + AFTER_TIMESTAMP='2020-10-03 12:42:54'
+2026-03-27 10:50:12,260 - INFO - ++ wc -l
+2026-03-27 10:50:12,260 - INFO - ++ git log --oneline --all '--since=2020-10-03 12:42:54'
+2026-03-27 10:50:12,290 - INFO - + COMMIT_COUNT=0
+2026-03-27 10:50:12,290 - INFO - + '[' 0 -eq 0 ']'
+2026-03-27 10:50:12,291 - INFO - + source /opt/miniconda3/bin/activate
+2026-03-27 10:50:12,292 - INFO - ++ _CONDA_ROOT=/opt/miniconda3
+2026-03-27 10:50:12,292 - INFO - ++ . /opt/miniconda3/etc/profile.d/conda.sh
+2026-03-27 10:50:12,292 - INFO - +++ export CONDA_EXE=/opt/miniconda3/bin/conda
+2026-03-27 10:50:12,292 - INFO - +++ CONDA_EXE=/opt/miniconda3/bin/conda
+2026-03-27 10:50:12,292 - INFO - +++ export _CE_M=
++++ _CE_M=
++++ export _CE_CONDA=
+2026-03-27 10:50:12,292 - INFO - +++ _CE_CONDA=
++++ export CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
++++ CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
+2026-03-27 10:50:12,294 - INFO - +++ '[' -z '' ']'
+2026-03-27 10:50:12,294 - INFO - +++ export CONDA_SHLVL=0
++++ CONDA_SHLVL=0
+2026-03-27 10:50:12,294 - INFO - +++ '[' -n '' ']'
+2026-03-27 10:50:12,295 - INFO - +++++ dirname /opt/miniconda3/bin/conda
+2026-03-27 10:50:12,303 - INFO - ++++ dirname /opt/miniconda3/bin
+2026-03-27 10:50:12,311 - INFO - +++ PATH=/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+2026-03-27 10:50:12,311 - INFO - +++ export PATH
+2026-03-27 10:50:12,311 - INFO - +++ '[' -z '' ']'
+2026-03-27 10:50:12,311 - INFO - +++ PS1=
+2026-03-27 10:50:12,311 - INFO - ++ conda activate
+2026-03-27 10:50:12,311 - INFO - ++ local cmd=activate
+2026-03-27 10:50:12,312 - INFO - ++ case "$cmd" in
+2026-03-27 10:50:12,312 - INFO - ++ __conda_activate activate
+++ '[' -n '' ']'
+2026-03-27 10:50:12,312 - INFO - ++ local ask_conda
+2026-03-27 10:50:12,313 - INFO - +++ PS1=
++++ __conda_exe shell.posix activate
+2026-03-27 10:50:12,314 - INFO - +++ /opt/miniconda3/bin/conda shell.posix activate
+2026-03-27 10:50:12,447 - INFO - ++ ask_conda='PS1='\''(base) '\''
+export PATH='\''/opt/miniconda3/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'\''
+export CONDA_PREFIX='\''/opt/miniconda3'\''
+export CONDA_SHLVL='\''1'\''
+export CONDA_DEFAULT_ENV='\''base'\''
+export CONDA_PROMPT_MODIFIER='\''(base) '\''
+export CONDA_EXE='\''/opt/miniconda3/bin/conda'\''
+export _CE_M='\'''\''
+export _CE_CONDA='\'''\''
+2026-03-27 10:50:12,447 - INFO - export CONDA_PYTHON_EXE='\''/opt/miniconda3/bin/python'\'''
+2026-03-27 10:50:12,447 - INFO - ++ eval 'PS1='\''(base) '\''
+export PATH='\''/opt/miniconda3/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'\''
+export CONDA_PREFIX='\''/opt/miniconda3'\''
+export CONDA_SHLVL='\''1'\''
+export CONDA_DEFAULT_ENV='\''base'\''
+export CONDA_PROMPT_MODIFIER='\''(base) '\''
+export CONDA_EXE='\''/opt/miniconda3/bin/conda'\''
+export _CE_M='\'''\''
+export _CE_CONDA='\'''\''
+2026-03-27 10:50:12,447 - INFO - export CONDA_PYTHON_EXE='\''/opt/miniconda3/bin/python'\'''
+2026-03-27 10:50:12,447 - INFO - +++ PS1='(base) '
+2026-03-27 10:50:12,447 - INFO - +++ export PATH=/opt/miniconda3/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ PATH=/opt/miniconda3/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+2026-03-27 10:50:12,447 - INFO - +++ export CONDA_PREFIX=/opt/miniconda3
++++ CONDA_PREFIX=/opt/miniconda3
++++ export CONDA_SHLVL=1
++++ CONDA_SHLVL=1
++++ export CONDA_DEFAULT_ENV=base
++++ CONDA_DEFAULT_ENV=base
++++ export 'CONDA_PROMPT_MODIFIER=(base) '
++++ CONDA_PROMPT_MODIFIER='(base) '
++++ export CONDA_EXE=/opt/miniconda3/bin/conda
++++ CONDA_EXE=/opt/miniconda3/bin/conda
++++ export _CE_M=
++++ _CE_M=
++++ export _CE_CONDA=
++++ _CE_CONDA=
++++ export CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
++++ CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
+++ __conda_hashr
+2026-03-27 10:50:12,447 - INFO - ++ '[' -n '' ']'
+++ '[' -n '' ']'
+++ hash -r
+2026-03-27 10:50:12,448 - INFO - + conda activate testbed
+2026-03-27 10:50:12,448 - INFO - + local cmd=activate
++ case "$cmd" in
++ __conda_activate activate testbed
+2026-03-27 10:50:12,448 - INFO - + '[' -n '' ']'
++ local ask_conda
+2026-03-27 10:50:12,448 - INFO - ++ PS1='(base) '
+++ __conda_exe shell.posix activate testbed
+2026-03-27 10:50:12,449 - INFO - ++ /opt/miniconda3/bin/conda shell.posix activate testbed
+2026-03-27 10:50:12,574 - INFO - + ask_conda='PS1='\''(testbed) '\''
+export PATH='\''/opt/miniconda3/envs/testbed/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'\''
+export CONDA_PREFIX='\''/opt/miniconda3/envs/testbed'\''
+export CONDA_SHLVL='\''2'\''
+export CONDA_DEFAULT_ENV='\''testbed'\''
+export CONDA_PROMPT_MODIFIER='\''(testbed) '\''
+export CONDA_PREFIX_1='\''/opt/miniconda3'\''
+export CONDA_EXE='\''/opt/miniconda3/bin/conda'\''
+export _CE_M='\'''\''
+export _CE_CONDA='\'''\''
+export CONDA_PYTHON_EXE='\''/opt/miniconda3/bin/python'\'''
++ eval 'PS1='\''(testbed) '\''
+export PATH='\''/opt/miniconda3/envs/testbed/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'\''
+export CONDA_PREFIX='\''/opt/miniconda3/envs/testbed'\''
+export CONDA_SHLVL='\''2'\''
+export CONDA_DEFAULT_ENV='\''testbed'\''
+export CONDA_PROMPT_MODIFIER='\''(testbed) '\''
+export CONDA_PREFIX_1='\''/opt/miniconda3'\''
+export CONDA_EXE='\''/opt/miniconda3/bin/conda'\''
+export _CE_M='\'''\''
+export _CE_CONDA='\'''\''
+2026-03-27 10:50:12,575 - INFO - export CONDA_PYTHON_EXE='\''/opt/miniconda3/bin/python'\'''
+++ PS1='(testbed) '
+++ export PATH=/opt/miniconda3/envs/testbed/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ PATH=/opt/miniconda3/envs/testbed/bin:/opt/miniconda3/condabin:/opt/miniconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+++ export CONDA_PREFIX=/opt/miniconda3/envs/testbed
+++ CONDA_PREFIX=/opt/miniconda3/envs/testbed
+++ export CONDA_SHLVL=2
+++ CONDA_SHLVL=2
+2026-03-27 10:50:12,575 - INFO - ++ export CONDA_DEFAULT_ENV=testbed
+++ CONDA_DEFAULT_ENV=testbed
+++ export 'CONDA_PROMPT_MODIFIER=(testbed) '
+2026-03-27 10:50:12,575 - INFO - ++ CONDA_PROMPT_MODIFIER='(testbed) '
+++ export CONDA_PREFIX_1=/opt/miniconda3
+++ CONDA_PREFIX_1=/opt/miniconda3
+++ export CONDA_EXE=/opt/miniconda3/bin/conda
+++ CONDA_EXE=/opt/miniconda3/bin/conda
+++ export _CE_M=
+2026-03-27 10:50:12,575 - INFO - ++ _CE_M=
+++ export _CE_CONDA=
+2026-03-27 10:50:12,575 - INFO - ++ _CE_CONDA=
+2026-03-27 10:50:12,575 - INFO - ++ export CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
+++ CONDA_PYTHON_EXE=/opt/miniconda3/bin/python
+2026-03-27 10:50:12,575 - INFO - + __conda_hashr
+2026-03-27 10:50:12,575 - INFO - + '[' -n '' ']'
+2026-03-27 10:50:12,575 - INFO - + '[' -n '' ']'
++ hash -r
+2026-03-27 10:50:12,575 - INFO - + echo 'Current environment: testbed'
+2026-03-27 10:50:12,575 - INFO - Current environment: testbed
+2026-03-27 10:50:12,575 - INFO - + sed -i 's/pytest/pytest -rA/' tox.ini
+2026-03-27 10:50:12,593 - INFO - + sed -i 's/Jinja2>=2.3/Jinja2<3.0/' setup.py
+2026-03-27 10:50:12,608 - INFO - + sed -i 's/sphinxcontrib-applehelp/sphinxcontrib-applehelp<=1.0.7/' setup.py
+2026-03-27 10:50:12,623 - INFO - + sed -i 's/sphinxcontrib-devhelp/sphinxcontrib-devhelp<=1.0.5/' setup.py
+2026-03-27 10:50:12,638 - INFO - + sed -i 's/sphinxcontrib-qthelp/sphinxcontrib-qthelp<=1.0.6/' setup.py
+2026-03-27 10:50:12,653 - INFO - + sed -i 's/alabaster>=0.7,<0.8/alabaster>=0.7,<0.7.12/' setup.py
+2026-03-27 10:50:12,668 - INFO - + sed -i 's/'\''packaging'\'',/'\''packaging'\'', '\''markupsafe<=2.0.1'\'',/' setup.py
+2026-03-27 10:50:12,683 - INFO - + sed -i 's/sphinxcontrib-htmlhelp/sphinxcontrib-htmlhelp<=2.0.4/' setup.py
+2026-03-27 10:50:12,698 - INFO - + sed -i 's/sphinxcontrib-serializinghtml/sphinxcontrib-serializinghtml<=1.1.9/' setup.py
+2026-03-27 10:50:12,714 - INFO - + python -m pip install -e '.[test]'
+2026-03-27 10:50:12,958 - INFO - Obtaining file:///testbed
+2026-03-27 10:50:12,961 - INFO - Installing build dependencies: started
+2026-03-27 10:50:13,795 - INFO - Installing build dependencies: finished with status 'done'
+2026-03-27 10:50:13,796 - INFO - Checking if build backend supports build_editable: started
+2026-03-27 10:50:14,011 - INFO - Checking if build backend supports build_editable: finished with status 'done'
+2026-03-27 10:50:14,013 - INFO - Getting requirements to build editable: started
+2026-03-27 10:50:14,266 - INFO - Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+2026-03-27 10:50:14,511 - INFO - Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-03-27 10:50:14,655 - INFO - Collecting sphinxcontrib-applehelp<=1.0.7 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:14,804 - INFO - Downloading sphinxcontrib_applehelp-1.0.7-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:14,834 - INFO - Collecting sphinxcontrib-devhelp<=1.0.5 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:14,857 - INFO - Downloading sphinxcontrib_devhelp-1.0.5-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:14,885 - INFO - Collecting sphinxcontrib-jsmath (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:14,907 - INFO - Downloading sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-03-27 10:50:14,939 - INFO - Collecting sphinxcontrib-htmlhelp<=2.0.4 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:14,964 - INFO - Downloading sphinxcontrib_htmlhelp-2.0.4-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:14,991 - INFO - Collecting sphinxcontrib-serializinghtml<=1.1.9 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,012 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.9-py3-none-any.whl.metadata (2.3 kB)
+2026-03-27 10:50:15,042 - INFO - Collecting sphinxcontrib-qthelp<=1.0.6 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,062 - INFO - Downloading sphinxcontrib_qthelp-1.0.6-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:15,096 - INFO - Collecting Jinja2<3.0 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,117 - INFO - Downloading Jinja2-2.11.3-py2.py3-none-any.whl.metadata (3.5 kB)
+2026-03-27 10:50:15,159 - INFO - Collecting Pygments>=2.0 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,176 - INFO - Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+2026-03-27 10:50:15,214 - INFO - Collecting docutils>=0.12 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,234 - INFO - Downloading docutils-0.22.4-py3-none-any.whl.metadata (15 kB)
+2026-03-27 10:50:15,265 - INFO - Collecting snowballstemmer>=1.1 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,285 - INFO - Downloading snowballstemmer-3.0.1-py3-none-any.whl.metadata (7.9 kB)
+2026-03-27 10:50:15,321 - INFO - Collecting babel>=1.3 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,346 - INFO - Downloading babel-2.18.0-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:15,377 - INFO - Collecting alabaster<0.7.12,>=0.7 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,400 - INFO - Downloading alabaster-0.7.11-py2.py3-none-any.whl.metadata (2.0 kB)
+2026-03-27 10:50:15,432 - INFO - Collecting imagesize (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,456 - INFO - Downloading imagesize-1.5.0-py2.py3-none-any.whl.metadata (1.6 kB)
+2026-03-27 10:50:15,504 - INFO - Collecting requests>=2.5.0 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,525 - INFO - Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+2026-03-27 10:50:15,530 - INFO - Requirement already satisfied: setuptools in /opt/miniconda3/envs/testbed/lib/python3.9/site-packages (from Sphinx==3.3.0.dev20260327) (80.9.0)
+2026-03-27 10:50:15,530 - INFO - Requirement already satisfied: packaging in /opt/miniconda3/envs/testbed/lib/python3.9/site-packages (from Sphinx==3.3.0.dev20260327) (26.0)
+2026-03-27 10:50:15,584 - INFO - Collecting markupsafe<=2.0.1 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,607 - INFO - Downloading MarkupSafe-2.0.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (3.2 kB)
+2026-03-27 10:50:15,656 - INFO - Collecting pytest (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,678 - INFO - Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)
+2026-03-27 10:50:15,715 - INFO - Collecting pytest-cov (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,734 - INFO - Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+2026-03-27 10:50:15,773 - INFO - Collecting html5lib (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,793 - INFO - Downloading html5lib-1.1-py2.py3-none-any.whl.metadata (16 kB)
+2026-03-27 10:50:15,846 - INFO - Collecting typed_ast (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:15,869 - INFO - Downloading typed_ast-1.5.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.7 kB)
+2026-03-27 10:50:16,093 - INFO - Collecting cython (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,114 - INFO - Downloading cython-3.2.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (7.5 kB)
+2026-03-27 10:50:16,121 - INFO - INFO: pip is looking at multiple versions of sphinxcontrib-applehelp to determine which version is compatible with other requirements. This could take a while.
+2026-03-27 10:50:16,122 - INFO - Collecting sphinxcontrib-applehelp<=1.0.7 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,141 - INFO - Downloading sphinxcontrib_applehelp-1.0.6-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,167 - INFO - Downloading sphinxcontrib_applehelp-1.0.5-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,194 - INFO - Downloading sphinxcontrib_applehelp-1.0.4-py3-none-any.whl.metadata (2.7 kB)
+2026-03-27 10:50:16,200 - INFO - INFO: pip is looking at multiple versions of sphinxcontrib-devhelp to determine which version is compatible with other requirements. This could take a while.
+Collecting sphinxcontrib-devhelp<=1.0.5 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,221 - INFO - Downloading sphinxcontrib_devhelp-1.0.4-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,247 - INFO - Downloading sphinxcontrib_devhelp-1.0.3-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,276 - INFO - Downloading sphinxcontrib_devhelp-1.0.2-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-03-27 10:50:16,281 - INFO - INFO: pip is looking at multiple versions of sphinxcontrib-htmlhelp to determine which version is compatible with other requirements. This could take a while.
+2026-03-27 10:50:16,281 - INFO - Collecting sphinxcontrib-htmlhelp<=2.0.4 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,305 - INFO - Downloading sphinxcontrib_htmlhelp-2.0.3-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,333 - INFO - Downloading sphinxcontrib_htmlhelp-2.0.2-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,360 - INFO - Downloading sphinxcontrib_htmlhelp-2.0.1-py3-none-any.whl.metadata (2.8 kB)
+2026-03-27 10:50:16,365 - INFO - INFO: pip is looking at multiple versions of sphinxcontrib-qthelp to determine which version is compatible with other requirements. This could take a while.
+2026-03-27 10:50:16,365 - INFO - Collecting sphinxcontrib-qthelp<=1.0.6 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,389 - INFO - Downloading sphinxcontrib_qthelp-1.0.5-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,416 - INFO - Downloading sphinxcontrib_qthelp-1.0.4-py3-none-any.whl.metadata (2.2 kB)
+2026-03-27 10:50:16,441 - INFO - Downloading sphinxcontrib_qthelp-1.0.3-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-03-27 10:50:16,446 - INFO - INFO: pip is looking at multiple versions of sphinxcontrib-serializinghtml to determine which version is compatible with other requirements. This could take a while.
+Collecting sphinxcontrib-serializinghtml<=1.1.9 (from Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,469 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.8-py3-none-any.whl.metadata (2.3 kB)
+2026-03-27 10:50:16,502 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.7-py3-none-any.whl.metadata (2.3 kB)
+2026-03-27 10:50:16,537 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.6-py3-none-any.whl.metadata (2.3 kB)
+2026-03-27 10:50:16,568 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.5-py2.py3-none-any.whl.metadata (1.5 kB)
+2026-03-27 10:50:16,666 - INFO - Collecting charset_normalizer<4,>=2 (from requests>=2.5.0->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,689 - INFO - Downloading charset_normalizer-3.4.6-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+2026-03-27 10:50:16,732 - INFO - Collecting idna<4,>=2.5 (from requests>=2.5.0->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,755 - INFO - Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+2026-03-27 10:50:16,793 - INFO - Collecting urllib3<3,>=1.21.1 (from requests>=2.5.0->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,814 - INFO - Downloading urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+2026-03-27 10:50:16,851 - INFO - Collecting certifi>=2017.4.17 (from requests>=2.5.0->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,870 - INFO - Downloading certifi-2026.2.25-py3-none-any.whl.metadata (2.5 kB)
+2026-03-27 10:50:16,915 - INFO - Collecting six>=1.9 (from html5lib->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:16,938 - INFO - Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+2026-03-27 10:50:16,995 - INFO - Collecting webencodings (from html5lib->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:17,016 - INFO - Downloading webencodings-0.5.1-py2.py3-none-any.whl.metadata (2.1 kB)
+2026-03-27 10:50:17,048 - INFO - Collecting exceptiongroup>=1 (from pytest->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:17,072 - INFO - Downloading exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+2026-03-27 10:50:17,102 - INFO - Collecting iniconfig>=1 (from pytest->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:17,124 - INFO - Downloading iniconfig-2.1.0-py3-none-any.whl.metadata (2.7 kB)
+2026-03-27 10:50:17,128 - INFO - Requirement already satisfied: pluggy<2,>=1.5 in /opt/miniconda3/envs/testbed/lib/python3.9/site-packages (from pytest->Sphinx==3.3.0.dev20260327) (1.6.0)
+2026-03-27 10:50:17,130 - INFO - Requirement already satisfied: tomli>=1 in /opt/miniconda3/envs/testbed/lib/python3.9/site-packages (from pytest->Sphinx==3.3.0.dev20260327) (2.4.1)
+2026-03-27 10:50:17,131 - INFO - Requirement already satisfied: typing-extensions>=4.6.0 in /opt/miniconda3/envs/testbed/lib/python3.9/site-packages (from exceptiongroup>=1->pytest->Sphinx==3.3.0.dev20260327) (4.15.0)
+2026-03-27 10:50:17,410 - INFO - Collecting coverage>=7.10.6 (from coverage[toml]>=7.10.6->pytest-cov->Sphinx==3.3.0.dev20260327)
+2026-03-27 10:50:17,431 - INFO - Downloading coverage-7.10.7-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (8.9 kB)
+2026-03-27 10:50:17,465 - INFO - Downloading alabaster-0.7.11-py2.py3-none-any.whl (14 kB)
+2026-03-27 10:50:17,490 - INFO - Downloading Jinja2-2.11.3-py2.py3-none-any.whl (125 kB)
+2026-03-27 10:50:17,543 - INFO - Downloading MarkupSafe-2.0.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl (30 kB)
+2026-03-27 10:50:17,569 - INFO - Downloading sphinxcontrib_applehelp-1.0.4-py3-none-any.whl (120 kB)
+2026-03-27 10:50:17,608 - INFO - Downloading sphinxcontrib_devhelp-1.0.2-py2.py3-none-any.whl (84 kB)
+2026-03-27 10:50:17,641 - INFO - Downloading sphinxcontrib_htmlhelp-2.0.1-py3-none-any.whl (99 kB)
+2026-03-27 10:50:17,675 - INFO - Downloading sphinxcontrib_qthelp-1.0.3-py2.py3-none-any.whl (90 kB)
+2026-03-27 10:50:17,708 - INFO - Downloading sphinxcontrib_serializinghtml-1.1.5-py2.py3-none-any.whl (94 kB)
+2026-03-27 10:50:17,744 - INFO - Downloading babel-2.18.0-py3-none-any.whl (10.2 MB)
+2026-03-27 10:50:18,452 - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.2/10.2 MB 14.8 MB/s  0:00:00
+2026-03-27 10:50:18,453 - INFO - 
+2026-03-27 10:50:18,475 - INFO - Downloading docutils-0.22.4-py3-none-any.whl (633 kB)
+2026-03-27 10:50:18,497 - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 633.2/633.2 kB 24.4 MB/s  0:00:00
+2026-03-27 10:50:18,497 - INFO - 
+2026-03-27 10:50:18,522 - INFO - Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+2026-03-27 10:50:18,562 - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 28.3 MB/s  0:00:00
+2026-03-27 10:50:18,562 - INFO - 
+2026-03-27 10:50:18,583 - INFO - Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+2026-03-27 10:50:18,608 - INFO - Downloading charset_normalizer-3.4.6-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (207 kB)
+2026-03-27 10:50:18,640 - INFO - Downloading idna-3.11-py3-none-any.whl (71 kB)
+2026-03-27 10:50:18,667 - INFO - Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+2026-03-27 10:50:18,696 - INFO - Downloading certifi-2026.2.25-py3-none-any.whl (153 kB)
+2026-03-27 10:50:18,725 - INFO - Downloading snowballstemmer-3.0.1-py3-none-any.whl (103 kB)
+2026-03-27 10:50:18,760 - INFO - Downloading cython-3.2.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.5 MB)
+2026-03-27 10:50:18,863 - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 33.6 MB/s  0:00:00
+2026-03-27 10:50:18,863 - INFO - 
+2026-03-27 10:50:18,885 - INFO - Downloading html5lib-1.1-py2.py3-none-any.whl (112 kB)
+2026-03-27 10:50:18,910 - INFO - Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+2026-03-27 10:50:18,934 - INFO - Downloading imagesize-1.5.0-py2.py3-none-any.whl (5.8 kB)
+2026-03-27 10:50:18,959 - INFO - Downloading pytest-8.4.2-py3-none-any.whl (365 kB)
+2026-03-27 10:50:18,989 - INFO - Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+2026-03-27 10:50:19,015 - INFO - Downloading iniconfig-2.1.0-py3-none-any.whl (6.0 kB)
+2026-03-27 10:50:19,041 - INFO - Downloading pytest_cov-7.1.0-py3-none-any.whl (22 kB)
+2026-03-27 10:50:19,067 - INFO - Downloading coverage-7.10.7-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (246 kB)
+2026-03-27 10:50:19,097 - INFO - Downloading sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl (5.1 kB)
+2026-03-27 10:50:19,128 - INFO - Downloading typed_ast-1.5.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (823 kB)
+2026-03-27 10:50:19,149 - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.4/823.4 kB 36.1 MB/s  0:00:00
+2026-03-27 10:50:19,171 - INFO - Downloading webencodings-0.5.1-py2.py3-none-any.whl (11 kB)
+2026-03-27 10:50:19,233 - INFO - Building wheels for collected packages: Sphinx
+2026-03-27 10:50:19,234 - INFO - Building editable for Sphinx (pyproject.toml): started
+2026-03-27 10:50:19,556 - INFO - Building editable for Sphinx (pyproject.toml): finished with status 'done'
+2026-03-27 10:50:19,557 - INFO - Created wheel for Sphinx: filename=sphinx-3.3.0.dev20260327-0.editable-py3-none-any.whl size=8361 sha256=7a86c9d99cef981af8457d9fb6b89f712121b0bcbd9c890493a0e7517b721bd7
+2026-03-27 10:50:19,557 - INFO - Stored in directory: /tmp/pip-ephem-wheel-cache-_sqp58kt/wheels/7d/66/67/70d1ee2124ccf21d601c352e25cdca10f611f7c8b3f9ffb9e4
+2026-03-27 10:50:19,558 - INFO - Successfully built Sphinx
+2026-03-27 10:50:19,593 - INFO - Installing collected packages: webencodings, alabaster, urllib3, typed_ast, sphinxcontrib-serializinghtml, sphinxcontrib-qthelp, sphinxcontrib-jsmath, sphinxcontrib-htmlhelp, sphinxcontrib-devhelp, sphinxcontrib-applehelp, snowballstemmer, six, Pygments, markupsafe, iniconfig, imagesize, idna, exceptiongroup, docutils, cython, coverage, charset_normalizer, certifi, babel, requests, pytest, Jinja2, html5lib, Sphinx, pytest-cov
+2026-03-27 10:50:20,093 - INFO - Attempting uninstall: markupsafe
+    Found existing installation: MarkupSafe 3.0.3
+    Uninstalling MarkupSafe-3.0.3:
+2026-03-27 10:50:20,096 - INFO - Successfully uninstalled MarkupSafe-3.0.3
+2026-03-27 10:50:20,955 - INFO - Attempting uninstall: Jinja2
+    Found existing installation: Jinja2 3.0.3
+2026-03-27 10:50:20,956 - INFO - Uninstalling Jinja2-3.0.3:
+2026-03-27 10:50:20,961 - INFO - Successfully uninstalled Jinja2-3.0.3
+2026-03-27 10:50:21,062 - INFO - 
+2026-03-27 10:50:21,066 - INFO - Successfully installed Jinja2-2.11.3 Pygments-2.19.2 Sphinx-3.3.0.dev20260327 alabaster-0.7.11 babel-2.18.0 certifi-2026.2.25 charset_normalizer-3.4.6 coverage-7.10.7 cython-3.2.4 docutils-0.22.4 exceptiongroup-1.3.1 html5lib-1.1 idna-3.11 imagesize-1.5.0 iniconfig-2.1.0 markupsafe-2.0.1 pytest-8.4.2 pytest-cov-7.1.0 requests-2.32.5 six-1.17.0 snowballstemmer-3.0.1 sphinxcontrib-applehelp-1.0.4 sphinxcontrib-devhelp-1.0.2 sphinxcontrib-htmlhelp-2.0.1 sphinxcontrib-jsmath-1.0.1 sphinxcontrib-qthelp-1.0.3 sphinxcontrib-serializinghtml-1.1.5 typed_ast-1.5.5 urllib3-2.6.3 webencodings-0.5.1
+2026-03-27 10:50:21,066 - INFO - WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+2026-03-27 10:50:21,188 - INFO - + git config --global user.email setup@swebench.config
+2026-03-27 10:50:21,204 - INFO - + git config --global user.name SWE-bench
+2026-03-27 10:50:21,223 - INFO - + git commit --allow-empty -am SWE-bench
+2026-03-27 10:50:21,333 - INFO - [master ef83cc920] SWE-bench
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+2026-03-27 10:50:22,513 - INFO - ---> Removed intermediate container c16f002922db
+2026-03-27 10:50:22,514 - INFO - ---> e0df8d99fe2c
+2026-03-27 10:50:22,514 - INFO - Step 5/5 : WORKDIR /testbed/
+2026-03-27 10:50:22,514 - INFO - 
+2026-03-27 10:50:22,600 - INFO - ---> [Warning] The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+2026-03-27 10:50:22,600 - INFO - ---> Running in 7c0d2ccde9fa
+2026-03-27 10:50:22,624 - INFO - ---> Removed intermediate container 7c0d2ccde9fa
+2026-03-27 10:50:22,624 - INFO - ---> 669cfea0f579
+2026-03-27 10:50:22,624 - INFO - Successfully built 669cfea0f579
+2026-03-27 10:50:22,626 - INFO - Successfully tagged swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8273:latest
+2026-03-27 10:50:22,627 - INFO - Image built successfully!
