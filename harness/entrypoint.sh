@@ -25,7 +25,7 @@ BASELINE_SHA=$(git rev-parse HEAD)
 # timeout returns 124 on timeout, eforge may return non-zero on failure
 set +e
 timeout "$TIMEOUT" eforge build /input/issue.md \
-    --foreground --auto --no-monitor --no-plugins \
+    --foreground --auto --no-plugins \
     > /output/stdout.log 2> /output/stderr.log
 EXIT_CODE=$?
 set -e

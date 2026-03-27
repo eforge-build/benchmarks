@@ -207,6 +207,7 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
             mount_args = ["-v", f"{claude_dir}:/root/.claude:ro"]
 
         # Run eforge in container
+        # Expose monitor port (4567) so builds can be watched from host
         try:
             result = subprocess.run(
                 [
@@ -214,6 +215,7 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
                     "-v", f"{input_dir}:/input:ro",
                     "-v", f"{output_dir}:/output",
                     *mount_args,
+                    "-p", "4567:4567",
                     "-e", f"BASE_COMMIT={base_commit}",
                     "-e", f"TIMEOUT={timeout}",
                     eforge_image,
