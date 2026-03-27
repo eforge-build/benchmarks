@@ -1,0 +1,16 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install eforge globally
+RUN npm install -g eforge
+
+# Copy entrypoint script
+COPY harness/entrypoint.sh /usr/local/bin/eforge-bench
+RUN chmod +x /usr/local/bin/eforge-bench
+
+ENTRYPOINT ["eforge-bench"]

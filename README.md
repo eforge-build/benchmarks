@@ -24,7 +24,7 @@ source .venv/bin/activate
 ## Quick Start
 
 ```bash
-# Curated 5-instance starter set (recommended first run)
+# Curated 5-instance starter set (runs in Docker by default)
 python harness/run_benchmark.py --starter
 
 # Starter set + evaluate patches through SWE-bench Docker harness
@@ -34,10 +34,13 @@ python harness/run_benchmark.py --starter --eval
 python harness/run_benchmark.py --starter --baseline --eval
 
 # Specific instances
-python harness/run_benchmark.py --instance-ids "scikit-learn__scikit-learn-10870,pytest-dev__pytest-5103"
+python harness/run_benchmark.py --instance-ids "pytest-dev__pytest-5227,sphinx-doc__sphinx-8273"
 
 # First N from dataset (less targeted)
 python harness/run_benchmark.py --instances 20
+
+# Run on host without Docker (not recommended — wrong Python environment)
+python harness/run_benchmark.py --starter --no-docker
 ```
 
 ## Starter Instances
@@ -58,14 +61,18 @@ The `--starter` flag uses a curated set of 5 instances selected for:
 
 ## How It Works
 
+By default, eforge runs inside SWE-bench Docker containers with the correct Python environment. This lets eforge's validation-fix cycle work properly (it can actually run the project's tests).
+
 For each SWE-bench instance:
 
-1. **Clone** the repository at the pre-fix commit (`base_commit`)
-2. **Write `eforge.yaml`** with empty validation (SWE-bench handles test evaluation in Docker, not eforge)
-3. **Write PRD** from the `problem_statement` (GitHub issue text)
+1. **Build Docker image** — SWE-bench base image (correct Python + deps) + Node.js + eforge layer
+2. **Start container** with Claude auth mounted from `~/.claude/`
+3. **Checkout** `base_commit` (pre-fix state)
 4. **Run** `eforge build --foreground --auto --no-monitor --no-plugins`
-5. **Capture** the resulting `git diff`, filtering out benchmark artifacts (PRD, eforge.yaml)
-6. **(Optional)** Run SWE-bench evaluation harness to check if tests pass
+5. **Extract** the resulting `git diff`, filtering out benchmark artifacts
+6. **(Optional)** Run SWE-bench evaluation harness to verify tests pass
+
+The `--no-docker` flag falls back to running on the host (faster, but wrong Python environment means eforge's self-validation may fail on missing packages).
 
 The baseline runs `claude --print` with the same problem statement for A/B comparison.
 

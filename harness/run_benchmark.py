@@ -2,15 +2,15 @@
 """
 SWE-bench benchmark harness for eforge.
 
-Runs eforge (and optionally a vanilla Claude baseline) against SWE-bench
-instances, captures patches, and evaluates them using the SWE-bench harness.
+Runs eforge against SWE-bench instances inside Docker containers with the
+correct Python environment, captures patches, and evaluates them.
 
 Usage:
-    python harness/run_benchmark.py --starter                # Curated 5-instance starter set
-    python harness/run_benchmark.py --starter --baseline      # Starter set + vanilla Claude comparison
-    python harness/run_benchmark.py --instances 20            # First 20 from dataset
-    python harness/run_benchmark.py --instance-ids "scikit-learn__scikit-learn-10870,pytest-dev__pytest-5103"
-    python harness/run_benchmark.py --starter --eval          # Run + evaluate patches
+    python harness/run_benchmark.py --starter                # Curated starter set (Docker)
+    python harness/run_benchmark.py --starter --baseline      # + vanilla Claude comparison
+    python harness/run_benchmark.py --starter --eval          # + SWE-bench evaluation
+    python harness/run_benchmark.py --starter --no-docker     # Run on host (no Docker)
+    python harness/run_benchmark.py --instance-ids "pytest-dev__pytest-5227"
 """
 
 import argparse
@@ -18,6 +18,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,18 +35,18 @@ DATASET_NAME = "princeton-nlp/SWE-bench_Lite"
 
 # Curated starter instances: medium difficulty, clear problem statements,
 # manageable repo sizes, 40-70% solve rate across top agents.
-# Avoids: flask (0% solve), django-heavy bias, flaky tests.
 STARTER_INSTANCES = [
-    # scikit-learn: mid-sized, well-structured, 65-74% solve rate
-    "scikit-learn__scikit-learn-10949",   # Confirmed in Lite dataset
-    "scikit-learn__scikit-learn-13241",   # Clear API issue
-    # pytest: mid-sized, 47-59% solve rate — genuine medium difficulty
-    "pytest-dev__pytest-5103",            # Clear bug report with repro
-    "pytest-dev__pytest-5227",            # Well-scoped fixture issue
-    # sphinx: 37% solve rate — harder, shows methodology value
-    "sphinx-doc__sphinx-8273",            # Documentation build issue
+    "scikit-learn__scikit-learn-10949",
+    "scikit-learn__scikit-learn-13241",
+    "pytest-dev__pytest-5103",
+    "pytest-dev__pytest-5227",
+    "sphinx-doc__sphinx-8273",
 ]
 
+
+# ---------------------------------------------------------------------------
+# Dataset loading
+# ---------------------------------------------------------------------------
 
 def load_instances(
     num_instances: int | None = None,
@@ -78,68 +79,12 @@ def load_instances(
     return instances
 
 
-def setup_repo(instance: dict) -> Path:
-    """Clone the repo and checkout the base commit for a SWE-bench instance."""
-    instance_id = instance["instance_id"]
-    repo = instance["repo"]
-    base_commit = instance["base_commit"]
+# ---------------------------------------------------------------------------
+# PRD / config generation
+# ---------------------------------------------------------------------------
 
-    # Use repo name as directory (shared across instances from same repo)
-    repo_dir = REPOS_DIR / repo.replace("/", "__")
-
-    if repo_dir.exists():
-        print(f"  Resetting to {base_commit[:8]}")
-        subprocess.run(
-            ["git", "fetch", "origin"],
-            cwd=repo_dir, capture_output=True,
-        )
-        subprocess.run(
-            ["git", "checkout", "-f", base_commit],
-            cwd=repo_dir, capture_output=True, check=True,
-        )
-        subprocess.run(
-            ["git", "clean", "-fdx"],
-            cwd=repo_dir, capture_output=True, check=True,
-        )
-        return repo_dir
-
-    # Clone fresh
-    clone_url = f"https://github.com/{repo}.git"
-    print(f"  Cloning {repo}...")
-    subprocess.run(
-        ["git", "clone", "--quiet", clone_url, str(repo_dir)],
-        check=True, capture_output=True,
-    )
-
-    print(f"  Checking out {base_commit[:8]}")
-    subprocess.run(
-        ["git", "checkout", "-f", base_commit],
-        cwd=repo_dir, capture_output=True, check=True,
-    )
-
-    return repo_dir
-
-
-def write_eforge_config(repo_dir: Path):
-    """Write a minimal eforge.yaml that disables validation.
-
-    SWE-bench handles test evaluation separately in Docker containers with
-    the correct Python environment. eforge just needs to produce a patch.
-    """
-    config_path = repo_dir / "eforge.yaml"
-    config_path.write_text(
-        "# Minimal config for SWE-bench benchmarking\n"
-        "# Validation is handled by SWE-bench evaluation harness, not eforge\n"
-        "validate: []\n"
-    )
-
-
-def write_prd(instance: dict, repo_dir: Path) -> Path:
-    """Write the SWE-bench problem statement as a PRD file for eforge."""
-    prd_dir = repo_dir / "docs"
-    prd_dir.mkdir(exist_ok=True)
-    prd_path = prd_dir / "swe-bench-issue.md"
-
+def make_prd_content(instance: dict) -> str:
+    """Generate PRD content from a SWE-bench instance."""
     problem = instance["problem_statement"]
     hints = instance.get("hints_text", "")
     repo = instance["repo"]
@@ -154,43 +99,208 @@ def write_prd(instance: dict, repo_dir: Path) -> Path:
     content += "2. Do not modify test files\n"
     content += "3. Ensure existing tests continue to pass\n"
     content += "4. Prefer the simplest correct fix over refactoring\n"
-
-    prd_path.write_text(content)
-    return prd_path
+    return content
 
 
-def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 900) -> dict:
-    """Run eforge against a SWE-bench instance and capture the patch."""
+EFORGE_YAML = """\
+# Minimal config for SWE-bench benchmarking
+# Validation is discovered automatically by eforge from the project
+validate: []
+"""
+
+
+# ---------------------------------------------------------------------------
+# Docker mode
+# ---------------------------------------------------------------------------
+
+def get_swebench_image_name(instance: dict) -> str:
+    """Get the SWE-bench Docker image name for an instance.
+
+    SWE-bench evaluation images follow the naming convention:
+        sweb.eval.x86_64.<instance_id>:latest
+    """
+    instance_id = instance["instance_id"]
+    return f"sweb.eval.x86_64.{instance_id}:latest"
+
+
+def prepare_docker_images(instances: list[dict]):
+    """Build SWE-bench Docker images for the given instances."""
+    instance_ids = [i["instance_id"] for i in instances]
+    print("Preparing SWE-bench Docker images...")
+    print("  (This may take a while on first run — building Python environments)")
+
+    # Use swebench's built-in image builder
+    # This creates sweb.eval.x86_64.<instance_id>:latest images
+    try:
+        from swebench.harness.docker_build import build_instance_images
+        from swebench.harness.test_spec import make_test_spec
+
+        test_specs = [make_test_spec(inst) for inst in instances]
+        build_instance_images(test_specs)
+    except ImportError:
+        # Fallback: try CLI approach
+        ids_str = " ".join(instance_ids)
+        subprocess.run(
+            [
+                sys.executable, "-m", "swebench.harness.prepare_images",
+                "--dataset_name", DATASET_NAME,
+                "--instance_ids", *instance_ids,
+            ],
+            check=True,
+        )
+
+    print("  SWE-bench images ready.\n")
+
+
+def build_eforge_image(base_image: str, instance_id: str) -> str:
+    """Build an eforge-enabled Docker image on top of a SWE-bench base."""
+    tag = f"eforge-bench/{instance_id}:latest"
+
+    # Check if already built
+    result = subprocess.run(
+        ["docker", "images", "-q", tag],
+        capture_output=True, text=True,
+    )
+    if result.stdout.strip():
+        return tag
+
+    print(f"  Building eforge layer on {base_image}...")
+    subprocess.run(
+        [
+            "docker", "build",
+            "--build-arg", f"BASE_IMAGE={base_image}",
+            "-t", tag,
+            "-f", str(REPO_ROOT / "Dockerfile.eforge"),
+            str(REPO_ROOT),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return tag
+
+
+def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
+    """Run eforge inside a SWE-bench Docker container."""
+    instance_id = instance["instance_id"]
+    base_commit = instance["base_commit"]
+    start_time = time.time()
+
+    # Get/build Docker images
+    swebench_image = get_swebench_image_name(instance)
+    eforge_image = build_eforge_image(swebench_image, instance_id)
+
+    # Create temp directories for input/output
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_dir = Path(tmpdir) / "input"
+        output_dir = Path(tmpdir) / "output"
+        input_dir.mkdir()
+        output_dir.mkdir()
+
+        # Write PRD and config
+        (input_dir / "issue.md").write_text(make_prd_content(instance))
+        (input_dir / "eforge.yaml").write_text(EFORGE_YAML)
+
+        # Find Claude auth directory
+        claude_dir = Path.home() / ".claude"
+        mount_args = []
+        if claude_dir.exists():
+            mount_args = ["-v", f"{claude_dir}:/root/.claude:ro"]
+
+        # Run eforge in container
+        try:
+            result = subprocess.run(
+                [
+                    "docker", "run", "--rm",
+                    "-v", f"{input_dir}:/input:ro",
+                    "-v", f"{output_dir}:/output",
+                    *mount_args,
+                    "-e", f"BASE_COMMIT={base_commit}",
+                    "-e", f"TIMEOUT={timeout}",
+                    eforge_image,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=timeout + 60,  # Extra buffer for container overhead
+            )
+            container_exit = result.returncode
+        except subprocess.TimeoutExpired:
+            container_exit = -1
+
+        duration = time.time() - start_time
+
+        # Read results from output directory
+        exit_code_file = output_dir / "exit_code"
+        patch_file = output_dir / "raw_patch.diff"
+        stdout_file = output_dir / "stdout.log"
+        stderr_file = output_dir / "stderr.log"
+
+        exit_code = int(exit_code_file.read_text().strip()) if exit_code_file.exists() else container_exit
+        patch = patch_file.read_text() if patch_file.exists() else ""
+        stdout = stdout_file.read_text() if stdout_file.exists() else ""
+        stderr = stderr_file.read_text() if stderr_file.exists() else ""
+
+        # Filter benchmark artifacts from patch
+        patch = filter_benchmark_artifacts(patch)
+
+        return {
+            "instance_id": instance_id,
+            "model_name_or_path": "eforge",
+            "model_patch": patch,
+            "exit_code": exit_code,
+            "duration_seconds": round(duration, 1),
+            "stdout_tail": stdout[-2000:] if stdout else "",
+            "stderr_tail": stderr[-2000:] if stderr else "",
+            "mode": "docker",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Host mode (no Docker)
+# ---------------------------------------------------------------------------
+
+def setup_repo(instance: dict) -> Path:
+    """Clone the repo and checkout the base commit."""
+    repo = instance["repo"]
+    base_commit = instance["base_commit"]
+    repo_dir = REPOS_DIR / repo.replace("/", "__")
+
+    if repo_dir.exists():
+        print(f"  Resetting to {base_commit[:8]}")
+        subprocess.run(["git", "fetch", "origin"], cwd=repo_dir, capture_output=True)
+        subprocess.run(["git", "checkout", "-f", base_commit], cwd=repo_dir, capture_output=True, check=True)
+        subprocess.run(["git", "clean", "-fdx"], cwd=repo_dir, capture_output=True, check=True)
+        return repo_dir
+
+    clone_url = f"https://github.com/{repo}.git"
+    print(f"  Cloning {repo}...")
+    subprocess.run(["git", "clone", "--quiet", clone_url, str(repo_dir)], check=True, capture_output=True)
+    subprocess.run(["git", "checkout", "-f", base_commit], cwd=repo_dir, capture_output=True, check=True)
+    return repo_dir
+
+
+def run_eforge_host(instance: dict, repo_dir: Path, timeout: int = 900) -> dict:
+    """Run eforge directly on the host (no Docker)."""
     instance_id = instance["instance_id"]
     start_time = time.time()
 
-    # Commit current state so we have a clean baseline for diffing
-    subprocess.run(
-        ["git", "add", "-A"],
-        cwd=repo_dir, capture_output=True,
-    )
-    subprocess.run(
-        ["git", "commit", "-m", "benchmark baseline", "--allow-empty"],
-        cwd=repo_dir, capture_output=True,
-    )
+    # Write config and PRD
+    (repo_dir / "eforge.yaml").write_text(EFORGE_YAML)
+    prd_dir = repo_dir / "docs"
+    prd_dir.mkdir(exist_ok=True)
+    prd_path = prd_dir / "swe-bench-issue.md"
+    prd_path.write_text(make_prd_content(instance))
+
+    # Commit baseline
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "benchmark baseline", "--allow-empty"], cwd=repo_dir, capture_output=True)
     baseline_sha = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=repo_dir, capture_output=True, text=True,
+        ["git", "rev-parse", "HEAD"], cwd=repo_dir, capture_output=True, text=True,
     ).stdout.strip()
 
     try:
         result = subprocess.run(
-            [
-                "eforge", "build", str(prd_path),
-                "--foreground",
-                "--auto",
-                "--no-monitor",
-                "--no-plugins",
-            ],
-            cwd=repo_dir,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
+            ["eforge", "build", str(prd_path), "--foreground", "--auto", "--no-monitor", "--no-plugins"],
+            cwd=repo_dir, capture_output=True, text=True, timeout=timeout,
         )
         exit_code = result.returncode
         stdout = result.stdout
@@ -202,21 +312,11 @@ def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 90
 
     duration = time.time() - start_time
 
-    # Capture the full diff from baseline (staged + unstaged + untracked)
-    # First, stage everything so we get a complete picture
-    subprocess.run(
-        ["git", "add", "-A"],
-        cwd=repo_dir, capture_output=True,
-    )
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
     diff_result = subprocess.run(
-        ["git", "diff", "--cached", baseline_sha],
-        cwd=repo_dir, capture_output=True, text=True,
+        ["git", "diff", "--cached", baseline_sha], cwd=repo_dir, capture_output=True, text=True,
     )
-    patch = diff_result.stdout
-
-    # Filter out our PRD and eforge config from the patch — SWE-bench
-    # only wants changes to the actual source code
-    patch = filter_benchmark_artifacts(patch)
+    patch = filter_benchmark_artifacts(diff_result.stdout)
 
     return {
         "instance_id": instance_id,
@@ -226,8 +326,58 @@ def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 90
         "duration_seconds": round(duration, 1),
         "stdout_tail": stdout[-2000:] if stdout else "",
         "stderr_tail": stderr[-2000:] if stderr else "",
+        "mode": "host",
     }
 
+
+def run_baseline(instance: dict, repo_dir: Path, timeout: int = 300) -> dict:
+    """Run vanilla Claude (no eforge) against the same instance."""
+    instance_id = instance["instance_id"]
+    base_commit = instance["base_commit"]
+    start_time = time.time()
+
+    subprocess.run(["git", "checkout", "-f", base_commit], cwd=repo_dir, capture_output=True)
+    subprocess.run(["git", "clean", "-fdx"], cwd=repo_dir, capture_output=True)
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "baseline", "--allow-empty"], cwd=repo_dir, capture_output=True)
+
+    problem = instance["problem_statement"]
+    hints = instance.get("hints_text", "")
+    prompt = f"Fix this bug in the repository:\n\n{problem}"
+    if hints:
+        prompt += f"\n\nAdditional context:\n{hints}"
+    prompt += "\n\nMake the minimal changes necessary. Do not modify test files."
+
+    try:
+        result = subprocess.run(
+            ["claude", "--print", "--dangerously-skip-permissions", prompt],
+            cwd=repo_dir, capture_output=True, text=True, timeout=timeout,
+        )
+        exit_code = result.returncode
+    except subprocess.TimeoutExpired:
+        exit_code = -1
+    except FileNotFoundError:
+        print("  Warning: 'claude' CLI not found, skipping baseline")
+        return None
+
+    duration = time.time() - start_time
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
+    diff_result = subprocess.run(
+        ["git", "diff", "--cached", "HEAD~1"], cwd=repo_dir, capture_output=True, text=True,
+    )
+
+    return {
+        "instance_id": instance_id,
+        "model_name_or_path": "claude-baseline",
+        "model_patch": diff_result.stdout,
+        "exit_code": exit_code,
+        "duration_seconds": round(duration, 1),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Shared utilities
+# ---------------------------------------------------------------------------
 
 def filter_benchmark_artifacts(patch: str) -> str:
     """Remove diffs for files we added (PRD, eforge.yaml) from the patch."""
@@ -240,89 +390,23 @@ def filter_benchmark_artifacts(patch: str) -> str:
 
     for line in patch.split("\n"):
         if line.startswith("diff --git"):
-            # Flush previous hunk
             if current_hunk and not skip:
                 filtered_hunks.append("\n".join(current_hunk))
             current_hunk = [line]
-            # Skip our benchmark artifacts
             skip = any(
                 artifact in line
-                for artifact in [
-                    "docs/swe-bench-issue.md",
-                    "eforge.yaml",
-                    ".eforge/",
-                ]
+                for artifact in ["docs/swe-bench-issue.md", "eforge.yaml", ".eforge/"]
             )
         else:
             current_hunk.append(line)
 
-    # Flush last hunk
     if current_hunk and not skip:
         filtered_hunks.append("\n".join(current_hunk))
 
     return "\n".join(filtered_hunks)
 
 
-def run_baseline(instance: dict, repo_dir: Path, timeout: int = 300) -> dict:
-    """Run vanilla Claude (no eforge) against the same instance for comparison."""
-    instance_id = instance["instance_id"]
-    start_time = time.time()
-
-    # Reset repo to clean state at base_commit
-    base_commit = instance["base_commit"]
-    subprocess.run(["git", "checkout", "-f", base_commit], cwd=repo_dir, capture_output=True)
-    subprocess.run(["git", "clean", "-fdx"], cwd=repo_dir, capture_output=True)
-
-    # Commit baseline
-    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", "baseline", "--allow-empty"],
-        cwd=repo_dir, capture_output=True,
-    )
-
-    problem = instance["problem_statement"]
-    hints = instance.get("hints_text", "")
-    prompt = f"Fix this bug in the repository:\n\n{problem}"
-    if hints:
-        prompt += f"\n\nAdditional context:\n{hints}"
-    prompt += "\n\nMake the minimal changes necessary. Do not modify test files."
-
-    try:
-        result = subprocess.run(
-            ["claude", "--print", "--dangerously-skip-permissions", prompt],
-            cwd=repo_dir,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        exit_code = result.returncode
-    except subprocess.TimeoutExpired:
-        exit_code = -1
-    except FileNotFoundError:
-        print("  Warning: 'claude' CLI not found, skipping baseline")
-        return None
-
-    duration = time.time() - start_time
-
-    # Capture diff
-    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
-    diff_result = subprocess.run(
-        ["git", "diff", "--cached", "HEAD~1"],
-        cwd=repo_dir, capture_output=True, text=True,
-    )
-    patch = diff_result.stdout
-
-    return {
-        "instance_id": instance_id,
-        "model_name_or_path": "claude-baseline",
-        "model_patch": patch,
-        "exit_code": exit_code,
-        "duration_seconds": round(duration, 1),
-    }
-
-
 def save_predictions(predictions: list[dict], run_dir: Path, name: str) -> Path:
-    """Save predictions in SWE-bench JSONL format."""
     pred_path = run_dir / f"{name}_predictions.jsonl"
     with open(pred_path, "w") as f:
         for pred in predictions:
@@ -336,7 +420,6 @@ def save_predictions(predictions: list[dict], run_dir: Path, name: str) -> Path:
 
 
 def save_run_metadata(predictions: list[dict], run_dir: Path, name: str):
-    """Save full run metadata including timing and logs."""
     meta_path = run_dir / f"{name}_metadata.jsonl"
     with open(meta_path, "w") as f:
         for pred in predictions:
@@ -344,10 +427,8 @@ def save_run_metadata(predictions: list[dict], run_dir: Path, name: str):
 
 
 def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
-    """Run the SWE-bench evaluation harness."""
     print(f"\nRunning SWE-bench evaluation on {predictions_path.name}...")
     run_id = predictions_path.stem
-
     try:
         result = subprocess.run(
             [
@@ -357,9 +438,7 @@ def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
                 "--max_workers", str(min(os.cpu_count() or 4, 8)),
                 "--run_id", run_id,
             ],
-            capture_output=True,
-            text=True,
-            timeout=3600,
+            capture_output=True, text=True, timeout=3600,
         )
         print(result.stdout[-3000:] if result.stdout else "")
         if result.stderr:
@@ -369,7 +448,6 @@ def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
 
 
 def print_summary(predictions: list[dict], name: str):
-    """Print a quick summary of the run."""
     total = len(predictions)
     has_patch = sum(1 for p in predictions if p["model_patch"].strip())
     timed_out = sum(1 for p in predictions if p.get("exit_code") == -1)
@@ -389,6 +467,10 @@ def print_summary(predictions: list[dict], name: str):
     print(f"{'='*60}\n")
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
     parser = argparse.ArgumentParser(description="Run eforge against SWE-bench instances")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -396,12 +478,15 @@ def main():
     group.add_argument("--instances", type=int, help="Number of instances (from start of dataset)")
     group.add_argument("--instance-ids", type=str, help="Comma-separated instance IDs")
 
+    parser.add_argument("--no-docker", action="store_true", help="Run on host instead of Docker (not recommended)")
     parser.add_argument("--baseline", action="store_true", help="Also run vanilla Claude baseline")
     parser.add_argument("--timeout", type=int, default=900, help="Per-instance timeout in seconds (default: 900)")
     parser.add_argument("--eval", action="store_true", help="Run SWE-bench evaluation after generating patches")
     parser.add_argument("--dataset", type=str, default=DATASET_NAME, help=f"Dataset name (default: {DATASET_NAME})")
     parser.add_argument("--skip-eforge", action="store_true", help="Skip eforge run (e.g., only run baseline)")
     args = parser.parse_args()
+
+    use_docker = not args.no_docker
 
     instance_ids = args.instance_ids.split(",") if args.instance_ids else None
     instances = load_instances(args.instances, instance_ids, starter=args.starter)
@@ -414,7 +499,12 @@ def main():
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
     run_dir = RESULTS_DIR / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Results directory: {run_dir}\n")
+    print(f"Results directory: {run_dir}")
+    print(f"Mode: {'Docker' if use_docker else 'host'}\n")
+
+    # Prepare Docker images if needed
+    if use_docker and not args.skip_eforge:
+        prepare_docker_images(instances)
 
     # Run eforge
     if not args.skip_eforge:
@@ -423,17 +513,17 @@ def main():
             instance_id = instance["instance_id"]
             print(f"[{i+1}/{len(instances)}] {instance_id}")
 
-            print("  Setting up repo...")
-            repo_dir = setup_repo(instance)
+            if use_docker:
+                print(f"  Building eforge Docker layer...")
+                print(f"  Running eforge in Docker (timeout: {args.timeout}s)...")
+                pred = run_eforge_docker(instance, timeout=args.timeout)
+            else:
+                print("  Setting up repo...")
+                repo_dir = setup_repo(instance)
+                print("  Writing eforge config + PRD...")
+                print(f"  Running eforge on host (timeout: {args.timeout}s)...")
+                pred = run_eforge_host(instance, repo_dir, timeout=args.timeout)
 
-            print("  Writing eforge config...")
-            write_eforge_config(repo_dir)
-
-            print("  Writing PRD...")
-            prd_path = write_prd(instance, repo_dir)
-
-            print(f"  Running eforge (timeout: {args.timeout}s)...")
-            pred = run_eforge(instance, repo_dir, prd_path, timeout=args.timeout)
             eforge_predictions.append(pred)
 
             patch_lines = len(pred["model_patch"].strip().split("\n")) if pred["model_patch"].strip() else 0
@@ -464,7 +554,6 @@ def main():
             pred = run_baseline(instance, repo_dir, timeout=args.timeout)
             if pred:
                 baseline_predictions.append(pred)
-
             print()
 
         if baseline_predictions:
@@ -482,6 +571,7 @@ def main():
         "num_instances": len(instances),
         "instance_ids": [i["instance_id"] for i in instances],
         "timeout": args.timeout,
+        "mode": "docker" if use_docker else "host",
         "ran_eforge": not args.skip_eforge,
         "ran_baseline": args.baseline,
     }
