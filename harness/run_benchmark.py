@@ -6,19 +6,18 @@ Runs eforge (and optionally a vanilla Claude baseline) against SWE-bench
 instances, captures patches, and evaluates them using the SWE-bench harness.
 
 Usage:
-    python harness/run_benchmark.py --instances 5          # Quick smoke test
-    python harness/run_benchmark.py --instances 20         # Phase 1
-    python harness/run_benchmark.py --instance-ids "astropy__astropy-12907,django__django-11179"
-    python harness/run_benchmark.py --instances 5 --baseline  # Also run vanilla Claude
+    python harness/run_benchmark.py --starter                # Curated 5-instance starter set
+    python harness/run_benchmark.py --starter --baseline      # Starter set + vanilla Claude comparison
+    python harness/run_benchmark.py --instances 20            # First 20 from dataset
+    python harness/run_benchmark.py --instance-ids "scikit-learn__scikit-learn-10870,pytest-dev__pytest-5103"
+    python harness/run_benchmark.py --starter --eval          # Run + evaluate patches
 """
 
 import argparse
 import json
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,26 +30,51 @@ REPO_ROOT = SCRIPT_DIR.parent
 REPOS_DIR = REPO_ROOT / "repos"
 RESULTS_DIR = REPO_ROOT / "results"
 
-# SWE-bench dataset to use (Lite is small and practical for initial testing)
 DATASET_NAME = "princeton-nlp/SWE-bench_Lite"
 
+# Curated starter instances: medium difficulty, clear problem statements,
+# manageable repo sizes, 40-70% solve rate across top agents.
+# Avoids: flask (0% solve), django-heavy bias, flaky tests.
+STARTER_INSTANCES = [
+    # scikit-learn: mid-sized, well-structured, 65-74% solve rate
+    "scikit-learn__scikit-learn-10870",   # Logic bug, solved by Devin (medium)
+    "scikit-learn__scikit-learn-13241",   # Clear API issue
+    # pytest: mid-sized, 47-59% solve rate — genuine medium difficulty
+    "pytest-dev__pytest-5103",            # Clear bug report with repro
+    "pytest-dev__pytest-5227",            # Well-scoped fixture issue
+    # sphinx: 37% solve rate — harder, shows methodology value
+    "sphinx-doc__sphinx-8273",            # Documentation build issue
+]
 
-def load_instances(num_instances: int | None = None, instance_ids: list[str] | None = None) -> list[dict]:
+
+def load_instances(
+    num_instances: int | None = None,
+    instance_ids: list[str] | None = None,
+    starter: bool = False,
+) -> list[dict]:
     """Load SWE-bench instances from the dataset."""
     print(f"Loading dataset: {DATASET_NAME}")
     ds = load_dataset(DATASET_NAME, split="test")
 
+    if starter:
+        instance_ids = STARTER_INSTANCES
+        print(f"Using curated starter set: {len(instance_ids)} instances")
+
     if instance_ids:
-        instances = [row for row in ds if row["instance_id"] in instance_ids]
-        missing = set(instance_ids) - {i["instance_id"] for i in instances}
+        id_set = set(instance_ids)
+        instances = [row for row in ds if row["instance_id"] in id_set]
+        missing = id_set - {i["instance_id"] for i in instances}
         if missing:
-            print(f"Warning: instances not found: {missing}")
+            print(f"Warning: instances not found in dataset: {missing}")
     elif num_instances:
         instances = list(ds.select(range(min(num_instances, len(ds)))))
     else:
         instances = list(ds)
 
     print(f"Loaded {len(instances)} instances")
+    for inst in instances:
+        print(f"  - {inst['instance_id']} ({inst['repo']})")
+    print()
     return instances
 
 
@@ -60,11 +84,15 @@ def setup_repo(instance: dict) -> Path:
     repo = instance["repo"]
     base_commit = instance["base_commit"]
 
-    repo_dir = REPOS_DIR / instance_id.replace("/", "__")
+    # Use repo name as directory (shared across instances from same repo)
+    repo_dir = REPOS_DIR / repo.replace("/", "__")
 
     if repo_dir.exists():
-        # Reset to the correct commit if repo already cloned
-        print(f"  Resetting existing repo to {base_commit[:8]}")
+        print(f"  Resetting to {base_commit[:8]}")
+        subprocess.run(
+            ["git", "fetch", "origin"],
+            cwd=repo_dir, capture_output=True,
+        )
         subprocess.run(
             ["git", "checkout", "-f", base_commit],
             cwd=repo_dir, capture_output=True, check=True,
@@ -92,6 +120,20 @@ def setup_repo(instance: dict) -> Path:
     return repo_dir
 
 
+def write_eforge_config(repo_dir: Path):
+    """Write a minimal eforge.yaml that disables validation.
+
+    SWE-bench handles test evaluation separately in Docker containers with
+    the correct Python environment. eforge just needs to produce a patch.
+    """
+    config_path = repo_dir / "eforge.yaml"
+    config_path.write_text(
+        "# Minimal config for SWE-bench benchmarking\n"
+        "# Validation is handled by SWE-bench evaluation harness, not eforge\n"
+        "validate: []\n"
+    )
+
+
 def write_prd(instance: dict, repo_dir: Path) -> Path:
     """Write the SWE-bench problem statement as a PRD file for eforge."""
     prd_dir = repo_dir / "docs"
@@ -100,33 +142,41 @@ def write_prd(instance: dict, repo_dir: Path) -> Path:
 
     problem = instance["problem_statement"]
     hints = instance.get("hints_text", "")
+    repo = instance["repo"]
 
-    content = f"# Issue: {instance['instance_id']}\n\n"
-    content += f"## Problem\n\n{problem}\n"
+    content = f"# Bug Fix: {instance['instance_id']}\n\n"
+    content += f"## Repository\n\n`{repo}`\n\n"
+    content += f"## Problem Description\n\n{problem}\n"
     if hints:
-        content += f"\n## Additional Context\n\n{hints}\n"
-    content += "\n## Instructions\n\n"
-    content += "Fix the issue described above. Make the minimal changes necessary "
-    content += "to resolve the problem while ensuring existing tests continue to pass.\n"
+        content += f"\n## Additional Context from Issue Discussion\n\n{hints}\n"
+    content += "\n## Requirements\n\n"
+    content += "1. Fix the bug described above with minimal changes\n"
+    content += "2. Do not modify test files\n"
+    content += "3. Ensure existing tests continue to pass\n"
+    content += "4. Prefer the simplest correct fix over refactoring\n"
 
     prd_path.write_text(content)
     return prd_path
 
 
-def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 600) -> dict:
+def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 900) -> dict:
     """Run eforge against a SWE-bench instance and capture the patch."""
     instance_id = instance["instance_id"]
     start_time = time.time()
 
-    # Record the starting state so we can capture the diff
+    # Commit current state so we have a clean baseline for diffing
     subprocess.run(
         ["git", "add", "-A"],
-        cwd=repo_dir, capture_output=True, check=True,
-    )
-    subprocess.run(
-        ["git", "stash"],
         cwd=repo_dir, capture_output=True,
     )
+    subprocess.run(
+        ["git", "commit", "-m", "benchmark baseline", "--allow-empty"],
+        cwd=repo_dir, capture_output=True,
+    )
+    baseline_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_dir, capture_output=True, text=True,
+    ).stdout.strip()
 
     try:
         result = subprocess.run(
@@ -152,29 +202,21 @@ def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 60
 
     duration = time.time() - start_time
 
-    # Capture the diff (everything eforge changed)
+    # Capture the full diff from baseline (staged + unstaged + untracked)
+    # First, stage everything so we get a complete picture
+    subprocess.run(
+        ["git", "add", "-A"],
+        cwd=repo_dir, capture_output=True,
+    )
     diff_result = subprocess.run(
-        ["git", "diff", "HEAD"],
+        ["git", "diff", "--cached", baseline_sha],
         cwd=repo_dir, capture_output=True, text=True,
     )
     patch = diff_result.stdout
 
-    # Also capture any new untracked files
-    untracked = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        cwd=repo_dir, capture_output=True, text=True,
-    )
-    if untracked.stdout.strip():
-        # Add untracked files to get their content in the diff
-        subprocess.run(
-            ["git", "add", "-N"] + untracked.stdout.strip().split("\n"),
-            cwd=repo_dir, capture_output=True,
-        )
-        untracked_diff = subprocess.run(
-            ["git", "diff"],
-            cwd=repo_dir, capture_output=True, text=True,
-        )
-        patch += untracked_diff.stdout
+    # Filter out our PRD and eforge config from the patch — SWE-bench
+    # only wants changes to the actual source code
+    patch = filter_benchmark_artifacts(patch)
 
     return {
         "instance_id": instance_id,
@@ -187,21 +229,63 @@ def run_eforge(instance: dict, repo_dir: Path, prd_path: Path, timeout: int = 60
     }
 
 
+def filter_benchmark_artifacts(patch: str) -> str:
+    """Remove diffs for files we added (PRD, eforge.yaml) from the patch."""
+    if not patch:
+        return patch
+
+    filtered_hunks = []
+    current_hunk = []
+    skip = False
+
+    for line in patch.split("\n"):
+        if line.startswith("diff --git"):
+            # Flush previous hunk
+            if current_hunk and not skip:
+                filtered_hunks.append("\n".join(current_hunk))
+            current_hunk = [line]
+            # Skip our benchmark artifacts
+            skip = any(
+                artifact in line
+                for artifact in [
+                    "docs/swe-bench-issue.md",
+                    "eforge.yaml",
+                    ".eforge/",
+                ]
+            )
+        else:
+            current_hunk.append(line)
+
+    # Flush last hunk
+    if current_hunk and not skip:
+        filtered_hunks.append("\n".join(current_hunk))
+
+    return "\n".join(filtered_hunks)
+
+
 def run_baseline(instance: dict, repo_dir: Path, timeout: int = 300) -> dict:
     """Run vanilla Claude (no eforge) against the same instance for comparison."""
     instance_id = instance["instance_id"]
     start_time = time.time()
 
-    # Reset repo to clean state
-    subprocess.run(["git", "checkout", "-f", "."], cwd=repo_dir, capture_output=True)
+    # Reset repo to clean state at base_commit
+    base_commit = instance["base_commit"]
+    subprocess.run(["git", "checkout", "-f", base_commit], cwd=repo_dir, capture_output=True)
     subprocess.run(["git", "clean", "-fdx"], cwd=repo_dir, capture_output=True)
+
+    # Commit baseline
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "baseline", "--allow-empty"],
+        cwd=repo_dir, capture_output=True,
+    )
 
     problem = instance["problem_statement"]
     hints = instance.get("hints_text", "")
-    prompt = f"Fix this issue in the repository:\n\n{problem}"
+    prompt = f"Fix this bug in the repository:\n\n{problem}"
     if hints:
         prompt += f"\n\nAdditional context:\n{hints}"
-    prompt += "\n\nMake the minimal changes necessary to fix the issue."
+    prompt += "\n\nMake the minimal changes necessary. Do not modify test files."
 
     try:
         result = subprocess.run(
@@ -221,8 +305,9 @@ def run_baseline(instance: dict, repo_dir: Path, timeout: int = 300) -> dict:
     duration = time.time() - start_time
 
     # Capture diff
+    subprocess.run(["git", "add", "-A"], cwd=repo_dir, capture_output=True)
     diff_result = subprocess.run(
-        ["git", "diff", "HEAD"],
+        ["git", "diff", "--cached", "HEAD~1"],
         cwd=repo_dir, capture_output=True, text=True,
     )
     patch = diff_result.stdout
@@ -241,7 +326,6 @@ def save_predictions(predictions: list[dict], run_dir: Path, name: str) -> Path:
     pred_path = run_dir / f"{name}_predictions.jsonl"
     with open(pred_path, "w") as f:
         for pred in predictions:
-            # SWE-bench evaluation only needs these three fields
             entry = {
                 "instance_id": pred["instance_id"],
                 "model_name_or_path": pred["model_name_or_path"],
@@ -275,7 +359,7 @@ def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
             ],
             capture_output=True,
             text=True,
-            timeout=3600,  # 1 hour max for evaluation
+            timeout=3600,
         )
         print(result.stdout[-3000:] if result.stdout else "")
         if result.stderr:
@@ -295,32 +379,32 @@ def print_summary(predictions: list[dict], name: str):
     print(f"\n{'='*60}")
     print(f"  {name} Run Summary")
     print(f"{'='*60}")
-    print(f"  Instances:     {total}")
+    print(f"  Instances:      {total}")
     print(f"  Produced patch: {has_patch}/{total}")
-    print(f"  Timed out:     {timed_out}")
-    print(f"  Failed:        {failed}")
-    print(f"  Total time:    {total_time:.0f}s ({total_time/60:.1f}m)")
+    print(f"  Timed out:      {timed_out}")
+    print(f"  Failed:         {failed}")
+    print(f"  Total time:     {total_time:.0f}s ({total_time/60:.1f}m)")
     if total > 0:
-        print(f"  Avg time:      {total_time/total:.0f}s per instance")
+        print(f"  Avg time:       {total_time/total:.0f}s per instance")
     print(f"{'='*60}\n")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run eforge against SWE-bench instances")
-    parser.add_argument("--instances", type=int, help="Number of instances to run")
-    parser.add_argument("--instance-ids", type=str, help="Comma-separated instance IDs")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--starter", action="store_true", help="Use curated 5-instance starter set")
+    group.add_argument("--instances", type=int, help="Number of instances (from start of dataset)")
+    group.add_argument("--instance-ids", type=str, help="Comma-separated instance IDs")
+
     parser.add_argument("--baseline", action="store_true", help="Also run vanilla Claude baseline")
-    parser.add_argument("--timeout", type=int, default=600, help="Per-instance timeout in seconds (default: 600)")
+    parser.add_argument("--timeout", type=int, default=900, help="Per-instance timeout in seconds (default: 900)")
     parser.add_argument("--eval", action="store_true", help="Run SWE-bench evaluation after generating patches")
     parser.add_argument("--dataset", type=str, default=DATASET_NAME, help=f"Dataset name (default: {DATASET_NAME})")
     parser.add_argument("--skip-eforge", action="store_true", help="Skip eforge run (e.g., only run baseline)")
     args = parser.parse_args()
 
-    if not args.instances and not args.instance_ids:
-        parser.error("Specify --instances N or --instance-ids 'id1,id2,...'")
-
     instance_ids = args.instance_ids.split(",") if args.instance_ids else None
-    instances = load_instances(args.instances, instance_ids)
+    instances = load_instances(args.instances, instance_ids, starter=args.starter)
 
     if not instances:
         print("No instances to process")
@@ -341,6 +425,9 @@ def main():
 
             print("  Setting up repo...")
             repo_dir = setup_repo(instance)
+
+            print("  Writing eforge config...")
+            write_eforge_config(repo_dir)
 
             print("  Writing PRD...")
             prd_path = write_prd(instance, repo_dir)
@@ -368,7 +455,7 @@ def main():
             instance_id = instance["instance_id"]
             print(f"[baseline {i+1}/{len(instances)}] {instance_id}")
 
-            repo_dir = REPOS_DIR / instance_id.replace("/", "__")
+            repo_dir = REPOS_DIR / instance["repo"].replace("/", "__")
             if not repo_dir.exists():
                 print("  Setting up repo...")
                 repo_dir = setup_repo(instance)
