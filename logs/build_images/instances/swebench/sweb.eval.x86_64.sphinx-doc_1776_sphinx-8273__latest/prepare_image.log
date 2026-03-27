@@ -1,2 +1,0 @@
-2026-03-27 10:49:38,623 - INFO - Environment image sweb.env.py.x86_64.764c21123474adcba1e003:latest found for sphinx-doc__sphinx-8273
-Building instance image swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8273:latest for sphinx-doc__sphinx-8273

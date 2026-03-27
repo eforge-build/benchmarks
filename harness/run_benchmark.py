@@ -118,10 +118,12 @@ def get_swebench_image_name(instance: dict) -> str:
     """Get the SWE-bench Docker image name for an instance.
 
     SWE-bench evaluation images follow the naming convention:
-        sweb.eval.x86_64.<instance_id>:latest
+        swebench/sweb.eval.x86_64.<modified_id>:latest
+    where __ in instance_id becomes _1776_ in the image name.
     """
     instance_id = instance["instance_id"]
-    return f"sweb.eval.x86_64.{instance_id}:latest"
+    modified_id = instance_id.replace("__", "_1776_")
+    return f"swebench/sweb.eval.x86_64.{modified_id}:latest"
 
 
 def prepare_docker_images(instances: list[dict]):
