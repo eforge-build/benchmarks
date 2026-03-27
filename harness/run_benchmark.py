@@ -22,6 +22,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Optional
 
 from datasets import load_dataset
 
@@ -49,10 +50,10 @@ STARTER_INSTANCES = [
 # ---------------------------------------------------------------------------
 
 def load_instances(
-    num_instances: int | None = None,
-    instance_ids: list[str] | None = None,
+    num_instances: Optional[int] = None,
+    instance_ids: Optional[List[str]] = None,
     starter: bool = False,
-) -> list[dict]:
+) -> List[dict]:
     """Load SWE-bench instances from the dataset."""
     print(f"Loading dataset: {DATASET_NAME}")
     ds = load_dataset(DATASET_NAME, split="test")
