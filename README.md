@@ -4,6 +4,8 @@ SWE-bench evaluation harness for [eforge](https://github.com/eforge-build/eforge
 
 Tests whether eforge's multi-agent pipeline (plan, build, blind review, evaluate) produces higher-quality patches than vanilla Claude on real GitHub issues.
 
+**[View published results](https://eforge-build.github.io/benchmarks/)**
+
 ## Prerequisites
 
 - Docker (SWE-bench images are x86_64; works on ARM Macs via Rosetta)
@@ -126,6 +128,23 @@ To fully remove cached eforge images:
 ```bash
 docker rmi $(docker images --filter "reference=eforge-bench/*" -q)
 ```
+
+## Publishing Results
+
+After a benchmark run with `--eval`, publish the results to the [GitHub Pages site](https://eforge-build.github.io/benchmarks/):
+
+```bash
+# Clear stale eval cache (required if re-running eval on same instances)
+rm -rf logs/run_evaluation/eforge_predictions eforge.eforge_predictions.json
+
+# Publish results from a run
+python3 publish.py results/<timestamp>/ --notes "description of this run"
+
+# Review and push
+git add docs/ && git commit -m "Publish benchmark results" && git push
+```
+
+The publish script merges data from the run config, eforge metadata, and SWE-bench eval report into the site. Each run is appended to the historical record.
 
 ## Notes
 
