@@ -1,0 +1,35 @@
+name: publish-swe-bench-results-via-github-pages
+description: Ship a GitHub Pages site displaying SWE-bench methodology, latest
+  results, and historical runs, with a manual publish script
+created: 2026-03-28
+compiled: 2026-03-28
+mode: errand
+base_branch: main
+validate:
+  - python publish.py results/2026-03-28T03-05-38/ --notes "Validation run"
+  - python -c "import json; d=json.load(open('docs/_data/runs.json')); assert
+    len(d)==1; assert d[0]['num_resolved']==2"
+  - python -c "from pathlib import Path; assert
+    Path('docs/_config.yml').exists(); assert
+    Path('docs/methodology.md').exists(); assert
+    Path('docs/results/2026-03-28T03-05-38.md').exists()"
+plans:
+  - id: plan-01-publish-site
+    name: GitHub Pages Site and Publish Script
+    depends_on: []
+    branch: publish-swe-bench-results-via-github-pages/publish-site
+    build:
+      - implement
+      - review-cycle
+    review:
+      strategy: auto
+      perspectives:
+        - code
+      maxRounds: 1
+      evaluatorStrictness: standard
+profile:
+  extends: errand
+  description: Small, self-contained changes. Single file or a few lines. Low
+    risk, no architectural impact.
+  compile:
+    - prd-passthrough
