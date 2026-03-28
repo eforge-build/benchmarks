@@ -16,6 +16,7 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -221,6 +222,7 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
                     "-v", f"{output_dir}:/output",
                     *auth_args,
                     "-p", "4566:4567",
+                    "-e", "EFORGE_MONITOR_PORT=4567",
                     "-e", f"BASE_COMMIT={base_commit}",
                     "-e", f"TIMEOUT={timeout}",
                     eforge_image,
@@ -485,6 +487,16 @@ def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
         print(result.stdout[-3000:] if result.stdout else "")
         if result.stderr:
             print(result.stderr[-1000:])
+
+        # Copy the SWE-bench eval report into the results directory.
+        # SWE-bench writes it to cwd as <model>.<run_id>.json — find and move it.
+        reports = list(Path.cwd().glob(f"*.{run_id}.json"))
+        if not reports:
+            print(f"  Warning: no eval report matching *.{run_id}.json found in {Path.cwd()}")
+        for report in reports:
+            dest = run_dir / report.name
+            shutil.move(str(report), str(dest))
+            print(f"  Eval report saved to {dest}")
     except subprocess.TimeoutExpired:
         print("  Evaluation timed out after 1 hour")
 

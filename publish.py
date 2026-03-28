@@ -160,10 +160,17 @@ def main():
     if metadata_path.exists():
         metadata_by_id = {e["instance_id"]: e for e in load_jsonl(metadata_path)}
 
-    eval_path = SCRIPT_DIR / "eforge.eforge_predictions.json"
-    if not eval_path.exists():
-        print(f"Error: eval report not found: {eval_path}", file=sys.stderr)
+    # Look for eval report in the results directory (preferred) or repo root (legacy)
+    eval_candidates = list(results_path.glob("*.eforge_predictions.json"))
+    if not eval_candidates:
+        eval_candidates = list(SCRIPT_DIR.glob("*.eforge_predictions.json"))
+    if not eval_candidates:
+        print(f"Error: eval report (*.eforge_predictions.json) not found in {results_path} or {SCRIPT_DIR}", file=sys.stderr)
         sys.exit(1)
+    if len(eval_candidates) > 1:
+        eval_candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        print(f"Warning: found {len(eval_candidates)} eval reports, using newest: {eval_candidates[0].name}", file=sys.stderr)
+    eval_path = eval_candidates[0]
     eval_report = json.loads(eval_path.read_text())
 
     # Build run data

@@ -52,7 +52,7 @@ Key flags: `--timeout <seconds>` (default 900), `--skip-eforge` (baseline only),
 - Claude Code installed via `curl -fsSL https://claude.ai/install.sh | bash` (not npm)
 - Claude Code binary lives at `/home/eforge/.local/bin/claude`
 - Auth via `ANTHROPIC_API_KEY` env var passed to container
-- Monitor port 4567 mapped to host port 4566 (`-p 4566:4567`)
+- Monitor port pinned to 4567 via `EFORGE_MONITOR_PORT=4567` env var, mapped to host port 4566 (`-p 4566:4567`)
 - Entrypoint auto-detects default branch (some repos use `master`, not `main`)
 
 ## Docker Image Naming
@@ -72,7 +72,7 @@ Evaluation logs go to `logs/run_evaluation/<run_id>/<model>/<instance_id>/`:
 - `report.json` -- pass/fail per test, resolved status
 - `patch.diff` -- the patch as applied
 
-The `filter_benchmark_artifacts()` function strips diffs for `eforge.yaml`, `docs/swe-bench-issue.md`, and `.eforge/` from patches before saving predictions.
+The `filter_benchmark_artifacts()` function strips diffs for `eforge.yaml`, `docs/swe-bench-issue.md`, `docs/prd-queue/`, `.eforge/`, `plans/`, and `.md.lock` from patches before saving predictions.
 
 ## Known Issues
 
