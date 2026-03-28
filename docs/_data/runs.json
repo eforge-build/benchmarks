@@ -11,41 +11,41 @@
       "pytest-dev__pytest-5227",
       "scikit-learn__scikit-learn-13241"
     ],
-    "notes": "Validation run",
+    "notes": "First published run - 5 starter instances",
     "instances": [
       {
         "instance_id": "pytest-dev__pytest-5103",
         "status": "unresolved",
-        "failure_reason": "tests failed",
-        "duration_seconds": null,
+        "failure_reason": "builder_failed",
+        "duration_seconds": 2438.6,
         "patch_lines": 129
       },
       {
         "instance_id": "pytest-dev__pytest-5227",
         "status": "resolved",
         "failure_reason": null,
-        "duration_seconds": null,
+        "duration_seconds": 139.1,
         "patch_lines": 2
       },
       {
         "instance_id": "scikit-learn__scikit-learn-10949",
         "status": "empty_patch",
         "failure_reason": "empty patch",
-        "duration_seconds": null,
+        "duration_seconds": 852.2,
         "patch_lines": 0
       },
       {
         "instance_id": "scikit-learn__scikit-learn-13241",
         "status": "resolved",
         "failure_reason": null,
-        "duration_seconds": null,
+        "duration_seconds": 687.7,
         "patch_lines": 4
       },
       {
         "instance_id": "sphinx-doc__sphinx-8273",
         "status": "unresolved",
         "failure_reason": "tests failed",
-        "duration_seconds": null,
+        "duration_seconds": 671.7,
         "patch_lines": 53
       }
     ]

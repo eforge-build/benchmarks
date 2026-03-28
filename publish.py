@@ -54,9 +54,17 @@ def build_per_instance_data(instance_ids, metadata_by_id, eval_report):
             status, reason = "empty_patch", "empty patch"
         else:
             status, reason = "unresolved", "tests failed"
-        patch = metadata_by_id.get(iid, {}).get("model_patch", "")
+        meta = metadata_by_id.get(iid, {})
+        patch = meta.get("model_patch", "")
+        # Use eforge's failure_reason from metadata for unresolved instances
+        if status == "unresolved":
+            eforge_reason = meta.get("failure_reason", "")
+            if eforge_reason and eforge_reason != "success":
+                reason = eforge_reason
+            # else: keep "tests failed" — eforge succeeded but eval says wrong fix
         instances.append({"instance_id": iid, "status": status,
-                          "failure_reason": reason, "duration_seconds": None,
+                          "failure_reason": reason,
+                          "duration_seconds": meta.get("duration_seconds"),
                           "patch_lines": count_patch_lines(patch)})
     return instances
 
@@ -74,11 +82,12 @@ def generate_run_page(entry, path):
         f"| Unresolved | {unresolved_n} |",
         f"| Empty Patch | {entry['num_empty_patch']} |",
         "", "## Per-Instance Results", "",
-        "| Instance | Status | Patch Lines | Failure Reason |",
-        "|----------|--------|-------------|----------------|",
+        "| Instance | Status | Duration | Patch Lines | Failure Reason |",
+        "|----------|--------|----------|-------------|----------------|",
     ]
     for i in insts:
-        lines.append(f"| {i['instance_id']} | {i['status']} | {i['patch_lines']} | {i['failure_reason'] or ''} |")
+        dur = f"{i['duration_seconds']:.0f}s" if i.get('duration_seconds') else "-"
+        lines.append(f"| {i['instance_id']} | {i['status']} | {dur} | {i['patch_lines']} | {i['failure_reason'] or ''} |")
     for label, pred in [("Resolved", lambda i: i["status"] == "resolved"),
                         ("Unresolved", lambda i: i["status"] != "resolved")]:
         lines += ["", f"## {label}", ""]
