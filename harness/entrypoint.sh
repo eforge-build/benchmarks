@@ -4,10 +4,16 @@ set -euo pipefail
 BASE_COMMIT="${BASE_COMMIT:?BASE_COMMIT env var required}"
 TIMEOUT="${TIMEOUT:-900}"
 
+# Ignore SIGPIPE — Node.js (eforge) doesn't handle it, and in Docker
+# redirected I/O can trigger it during process exit, causing exit code 13.
+trap '' PIPE
+
 cd /testbed
 
-# Reset to pre-fix state
-git checkout -f "$BASE_COMMIT" 2>/dev/null
+# Reset to pre-fix state on the default branch
+DEFAULT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git branch --list main master | head -1 | tr -d ' ')
+git checkout -f "$DEFAULT_BRANCH" 2>/dev/null
+git reset --hard "$BASE_COMMIT" 2>/dev/null
 git clean -fdx 2>/dev/null
 
 # Copy eforge config into repo
@@ -24,7 +30,7 @@ BASELINE_SHA=$(git rev-parse HEAD)
 # Run eforge with timeout
 # timeout returns 124 on timeout, eforge may return non-zero on failure
 set +e
-timeout "$TIMEOUT" eforge build /input/issue.md \
+timeout --preserve-status "$TIMEOUT" eforge build /input/issue.md \
     --foreground --auto --no-plugins \
     > /output/stdout.log 2> /output/stderr.log
 EXIT_CODE=$?

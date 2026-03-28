@@ -6,11 +6,31 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Install eforge globally (always fetches latest)
+# Install eforge globally
 RUN npm install -g eforge@latest
 
+# Create non-root user (Claude Code refuses --dangerously-skip-permissions as root)
+# Move /testbed into /workspace so eforge can create worktree sibling directories
+# (eforge creates worktrees at ../{project}-{name}-worktrees/ relative to cwd)
+RUN useradd -m -s /bin/bash eforge && \
+    mkdir -p /workspace && \
+    mv /testbed /workspace/testbed && \
+    ln -s /workspace/testbed /testbed && \
+    chown -R eforge:eforge /workspace
+
+# Install Claude Code CLI and configure git as the non-root user
+USER eforge
+RUN git config --global user.email "bench@eforge.dev" && \
+    git config --global user.name "eforge-bench"
+RUN curl -fsSL https://claude.ai/install.sh | bash
+# Ensure the SWE-bench testbed conda env is first in PATH so `python` and `pip`
+# resolve to the correct environment with all project dependencies installed.
+ENV PATH="/opt/miniconda3/envs/testbed/bin:/home/eforge/.local/bin:${PATH}"
+
 # Copy entrypoint script
+USER root
 COPY harness/entrypoint.sh /usr/local/bin/eforge-bench
 RUN chmod +x /usr/local/bin/eforge-bench
 
+USER eforge
 ENTRYPOINT ["eforge-bench"]

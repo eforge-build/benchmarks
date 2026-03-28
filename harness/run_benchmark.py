@@ -202,18 +202,14 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
         (input_dir / "issue.md").write_text(make_prd_content(instance))
         (input_dir / "eforge.yaml").write_text(EFORGE_YAML)
 
-        # Auth: pass API key if set, otherwise mount Claude OAuth files
+        # Auth: pass API key to container
         auth_args = []
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if api_key:
             auth_args.extend(["-e", f"ANTHROPIC_API_KEY={api_key}"])
         else:
-            claude_dir = Path.home() / ".claude"
-            claude_json = Path.home() / ".claude.json"
-            if claude_dir.exists():
-                auth_args.extend(["-v", f"{claude_dir}:/root/.claude:ro"])
-            if claude_json.exists():
-                auth_args.extend(["-v", f"{claude_json}:/root/.claude.json:ro"])
+            print("  Warning: ANTHROPIC_API_KEY not set, eforge will fail to authenticate")
+
 
         # Run eforge in container
         # Expose monitor port (4567) so builds can be watched from host
@@ -259,8 +255,9 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
             "model_patch": patch,
             "exit_code": exit_code,
             "duration_seconds": round(duration, 1),
-            "stdout_tail": stdout[-2000:] if stdout else "",
+            "stdout_tail": stdout[-5000:] if stdout else "",
             "stderr_tail": stderr[-2000:] if stderr else "",
+            "failure_reason": classify_failure(exit_code, stdout, stderr),
             "mode": "docker",
         }
 
@@ -390,6 +387,33 @@ def run_baseline(instance: dict, repo_dir: Path, timeout: int = 300) -> dict:
 # Shared utilities
 # ---------------------------------------------------------------------------
 
+def classify_failure(exit_code: int, stdout: str, stderr: str) -> str:
+    """Classify the eforge failure reason from its output."""
+    if exit_code == 0:
+        return "success"
+    if exit_code == 124 or exit_code == -1:
+        return "timeout"
+
+    # Check stdout for eforge pipeline status markers
+    if "error_max_turns" in stdout:
+        return "planner_max_turns"
+    if "Merge failed" in stdout:
+        # Extract review info if available
+        if "critical" in stdout:
+            return "merge_failed_after_review"
+        return "merge_failed"
+    if "Validation failed" in stdout and "Build complete" not in stdout:
+        return "validation_failed"
+    if "Validation failed" in stdout and "Build complete" in stdout:
+        return "validation_failed_but_completed"
+    if "Compile complete" in stdout and "Scheduling" in stdout and "Build complete" not in stdout:
+        return "builder_failed"
+    if "Compile complete" not in stdout:
+        return "compile_failed"
+
+    return f"unknown_exit_{exit_code}"
+
+
 def filter_benchmark_artifacts(patch: str) -> str:
     """Remove diffs for files we added (PRD, eforge.yaml) from the patch."""
     if not patch:
@@ -406,7 +430,14 @@ def filter_benchmark_artifacts(patch: str) -> str:
             current_hunk = [line]
             skip = any(
                 artifact in line
-                for artifact in ["docs/swe-bench-issue.md", "eforge.yaml", ".eforge/"]
+                for artifact in [
+                    "docs/swe-bench-issue.md",
+                    "docs/prd-queue/",
+                    "eforge.yaml",
+                    ".eforge/",
+                    "plans/",
+                    ".md.lock",
+                ]
             )
         else:
             current_hunk.append(line)
@@ -461,20 +492,40 @@ def run_evaluation(predictions_path: Path, run_dir: Path, dataset_name: str):
 def print_summary(predictions: list[dict], name: str):
     total = len(predictions)
     has_patch = sum(1 for p in predictions if p["model_patch"].strip())
-    timed_out = sum(1 for p in predictions if p.get("exit_code") == -1)
-    failed = sum(1 for p in predictions if p.get("exit_code", 0) not in (0, -1))
+    succeeded = sum(1 for p in predictions if p.get("exit_code") == 0)
     total_time = sum(p.get("duration_seconds", 0) for p in predictions)
+
+    # Group by failure reason
+    from collections import Counter
+    reasons = Counter(p.get("failure_reason", "unknown") for p in predictions)
 
     print(f"\n{'='*60}")
     print(f"  {name} Run Summary")
     print(f"{'='*60}")
     print(f"  Instances:      {total}")
+    print(f"  Succeeded:      {succeeded}/{total}")
     print(f"  Produced patch: {has_patch}/{total}")
-    print(f"  Timed out:      {timed_out}")
-    print(f"  Failed:         {failed}")
     print(f"  Total time:     {total_time:.0f}s ({total_time/60:.1f}m)")
     if total > 0:
         print(f"  Avg time:       {total_time/total:.0f}s per instance")
+
+    if len(reasons) > 1 or "success" not in reasons:
+        print(f"\n  Failure breakdown:")
+        for reason, count in reasons.most_common():
+            if reason == "success":
+                continue
+            print(f"    {reason}: {count}")
+
+    # Per-instance details
+    print(f"\n  {'Instance':<45} {'Status':<12} {'Patch':>6} {'Time':>8}")
+    print(f"  {'-'*75}")
+    for p in predictions:
+        iid = p["instance_id"]
+        reason = p.get("failure_reason", "unknown")
+        patch_lines = len(p["model_patch"].strip().split("\n")) if p["model_patch"].strip() else 0
+        dur = p.get("duration_seconds", 0)
+        print(f"  {iid:<45} {reason:<12} {patch_lines:>4}L  {dur:>6.0f}s")
+
     print(f"{'='*60}\n")
 
 
@@ -538,8 +589,10 @@ def main():
             eforge_predictions.append(pred)
 
             patch_lines = len(pred["model_patch"].strip().split("\n")) if pred["model_patch"].strip() else 0
-            status = "timeout" if pred["exit_code"] == -1 else ("ok" if pred["exit_code"] == 0 else f"exit {pred['exit_code']}")
-            print(f"  Done: {status}, {patch_lines} lines of patch, {pred['duration_seconds']}s")
+            reason = pred.get("failure_reason", "")
+            status = "timeout" if pred["exit_code"] == -1 else ("ok" if pred["exit_code"] == 0 else f"FAILED")
+            reason_str = f" ({reason})" if reason and reason != "success" else ""
+            print(f"  Done: {status}{reason_str}, {patch_lines} lines of patch, {pred['duration_seconds']}s")
             print()
 
         pred_path = save_predictions(eforge_predictions, run_dir, "eforge")
