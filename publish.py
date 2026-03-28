@@ -173,13 +173,9 @@ def main():
         "notes": args.notes, "instances": instances,
     }
 
-    # Duplicate check
+    # Load existing runs, replacing any duplicate timestamp (idempotent)
     runs = json.loads(RUNS_JSON.read_text()) if RUNS_JSON.exists() else []
-    if any(r["timestamp"] == timestamp for r in runs):
-        print(f"Error: duplicate timestamp {timestamp} already exists in runs.json", file=sys.stderr)
-        sys.exit(1)
-
-    # Write data and generate pages
+    runs = [r for r in runs if r["timestamp"] != timestamp]
     runs.append(run_entry)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     RUNS_JSON.write_text(json.dumps(runs, indent=2) + "\n")
