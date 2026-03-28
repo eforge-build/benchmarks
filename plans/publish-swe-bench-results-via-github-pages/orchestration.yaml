@@ -6,10 +6,10 @@ compiled: 2026-03-28
 mode: errand
 base_branch: main
 validate:
-  - python publish.py results/2026-03-28T03-05-38/ --notes "Validation run"
-  - python -c "import json; d=json.load(open('docs/_data/runs.json')); assert
+  - python3 publish.py results/2026-03-28T03-05-38/ --notes "Validation run"
+  - python3 -c "import json; d=json.load(open('docs/_data/runs.json')); assert
     len(d)==1; assert d[0]['num_resolved']==2"
-  - python -c "from pathlib import Path; assert
+  - python3 -c "from pathlib import Path; assert
     Path('docs/_config.yml').exists(); assert
     Path('docs/methodology.md').exists(); assert
     Path('docs/results/2026-03-28T03-05-38.md').exists()"

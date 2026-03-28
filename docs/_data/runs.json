@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "timestamp": "2026-03-28T03-05-38",
+    "dataset": "princeton-nlp/SWE-bench_Lite",
+    "num_instances": 5,
+    "num_resolved": 2,
+    "num_empty_patch": 1,
+    "resolution_rate": 40.0,
+    "eforge_version": "unknown",
+    "resolved_ids": [
+      "pytest-dev__pytest-5227",
+      "scikit-learn__scikit-learn-13241"
+    ],
+    "notes": "Validation run",
+    "instances": [
+      {
+        "instance_id": "pytest-dev__pytest-5103",
+        "status": "unresolved",
+        "failure_reason": "tests failed",
+        "duration_seconds": null,
+        "patch_lines": 129
+      },
+      {
+        "instance_id": "pytest-dev__pytest-5227",
+        "status": "resolved",
+        "failure_reason": null,
+        "duration_seconds": null,
+        "patch_lines": 2
+      },
+      {
+        "instance_id": "scikit-learn__scikit-learn-10949",
+        "status": "empty_patch",
+        "failure_reason": "empty patch",
+        "duration_seconds": null,
+        "patch_lines": 0
+      },
+      {
+        "instance_id": "scikit-learn__scikit-learn-13241",
+        "status": "resolved",
+        "failure_reason": null,
+        "duration_seconds": null,
+        "patch_lines": 4
+      },
+      {
+        "instance_id": "sphinx-doc__sphinx-8273",
+        "status": "unresolved",
+        "failure_reason": "tests failed",
+        "duration_seconds": null,
+        "patch_lines": 53
+      }
+    ]
+  }
+]

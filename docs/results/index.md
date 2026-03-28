@@ -4,4 +4,6 @@ title: "All Runs"
 ---
 # All Benchmark Runs
 
-No benchmark runs published yet. Run `python publish.py <results-dir>` to publish results.
+| Date | eforge Version | Dataset | Instances | Resolved | Rate | Details |
+|------|---------------|---------|-----------|----------|------|---------|
+| 2026-03-28T03-05-38 | unknown | princeton-nlp/SWE-bench_Lite | 5 | 2 | 40.0% | [View](2026-03-28T03-05-38.html) |
