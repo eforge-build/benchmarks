@@ -1,7 +1,7 @@
 ---
 title: Publish SWE-bench Results via GitHub Pages
 created: 2026-03-28
-status: running
+status: failed
 ---
 
 # Publish SWE-bench Results via GitHub Pages
