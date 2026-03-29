@@ -32,9 +32,9 @@ Each benchmark instance runs inside an isolated Docker container:
 1. **Base images** — SWE-bench provides pre-built Docker images (`swebench/sweb.eval.x86_64.<id>:latest`) with the correct repository state and Python environment for each instance.
 2. **eforge layer** — We build a layer on top (`eforge-bench/<instance_id>:latest`) that adds Node.js 24.x and the Claude Code CLI with eforge installed.
 3. **Non-root execution** — Containers run as a non-root `eforge` user because Claude Code refuses `bypassPermissions` mode as root.
-4. **PRD generation** — The harness generates an `issue.md` file from the GitHub issue text and an `eforge.yaml` configuration, mounted into the container at `/input`.
+4. **PRD generation** — The harness generates an `issue.md` file from the GitHub issue text and an `eforge/config.yaml` configuration, mounted into the container at `/input`.
 5. **Patch extraction** — After eforge completes, the harness extracts a git diff against the base commit.
-6. **Artifact filtering** — Diffs for benchmark-specific files (`eforge.yaml`, `docs/swe-bench-issue.md`, `.eforge/`) are stripped from the final patch to avoid contaminating results.
+6. **Artifact filtering** — Diffs for benchmark-specific files (`eforge/config.yaml`, `docs/swe-bench-issue.md`, `.eforge/`) are stripped from the final patch to avoid contaminating results.
 
 ## Instance Subset Rationale
 

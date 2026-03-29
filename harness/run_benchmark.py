@@ -105,9 +105,7 @@ def make_prd_content(instance: dict) -> str:
 
 
 EFORGE_YAML = """\
-# Minimal config for SWE-bench benchmarking
-# Validation is discovered automatically by eforge from the project
-validate: []
+backend: claude-sdk
 """
 
 
@@ -201,7 +199,9 @@ def run_eforge_docker(instance: dict, timeout: int = 900) -> dict:
 
         # Write PRD and config
         (input_dir / "issue.md").write_text(make_prd_content(instance))
-        (input_dir / "eforge.yaml").write_text(EFORGE_YAML)
+        eforge_config_dir = input_dir / "eforge"
+        eforge_config_dir.mkdir()
+        (eforge_config_dir / "config.yaml").write_text(EFORGE_YAML)
 
         # Auth: pass API key to container
         auth_args = []
@@ -294,7 +294,9 @@ def run_eforge_host(instance: dict, repo_dir: Path, timeout: int = 900) -> dict:
     start_time = time.time()
 
     # Write config and PRD
-    (repo_dir / "eforge.yaml").write_text(EFORGE_YAML)
+    eforge_config_dir = repo_dir / "eforge"
+    eforge_config_dir.mkdir(exist_ok=True)
+    (eforge_config_dir / "config.yaml").write_text(EFORGE_YAML)
     prd_dir = repo_dir / "docs"
     prd_dir.mkdir(exist_ok=True)
     prd_path = prd_dir / "swe-bench-issue.md"
@@ -434,11 +436,8 @@ def filter_benchmark_artifacts(patch: str) -> str:
                 artifact in line
                 for artifact in [
                     "docs/swe-bench-issue.md",
-                    "docs/prd-queue/",
-                    "eforge.yaml",
+                    "eforge/",
                     ".eforge/",
-                    "plans/",
-                    ".md.lock",
                 ]
             )
         else:

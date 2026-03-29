@@ -17,8 +17,9 @@ git reset --hard "$BASE_COMMIT" 2>/dev/null
 git clean -fdx 2>/dev/null
 
 # Copy eforge config into repo
-if [ -f /input/eforge.yaml ]; then
-    cp /input/eforge.yaml .
+if [ -d /input/eforge ]; then
+    mkdir -p eforge
+    cp -r /input/eforge/* eforge/
 fi
 
 # Commit baseline for clean diffing

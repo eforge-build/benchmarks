@@ -45,7 +45,7 @@ Key flags: `--timeout <seconds>` (default 900), `--skip-eforge` (baseline only),
 - `Dockerfile.eforge` -- Layers Node.js 24.x + Claude Code CLI + eforge onto SWE-bench base images
 - `analysis/compare.py` -- Side-by-side comparison of eforge vs baseline results
 
-**Data flow:** SWE-bench instance -> PRD (issue.md) + eforge.yaml written to temp dir -> mounted into Docker container at /input -> eforge produces patch -> diff extracted against baseline commit and filtered (benchmark artifacts removed) -> saved as JSONL in `results/<timestamp>/`
+**Data flow:** SWE-bench instance -> PRD (issue.md) + eforge/config.yaml written to temp dir -> mounted into Docker container at /input -> eforge produces patch -> diff extracted against baseline commit and filtered (benchmark artifacts removed) -> saved as JSONL in `results/<timestamp>/`
 
 **Docker container setup:**
 - Runs as non-root `eforge` user (Claude Code refuses `bypassPermissions` as root)
@@ -72,7 +72,7 @@ Evaluation logs go to `logs/run_evaluation/<run_id>/<model>/<instance_id>/`:
 - `report.json` -- pass/fail per test, resolved status
 - `patch.diff` -- the patch as applied
 
-The `filter_benchmark_artifacts()` function strips diffs for `eforge.yaml`, `docs/swe-bench-issue.md`, `docs/prd-queue/`, `.eforge/`, `plans/`, and `.md.lock` from patches before saving predictions.
+The `filter_benchmark_artifacts()` function strips diffs for `eforge/`, `docs/swe-bench-issue.md`, and `.eforge/` from patches before saving predictions.
 
 ## Known Issues
 
